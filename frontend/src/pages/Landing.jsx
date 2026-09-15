@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Activity, Bell, Lock, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Activity, Bell, Lock, ArrowRight, TrendingUp, Users, MapPin } from 'lucide-react';
 import Navbar from '../components/common/Navbar';
 
 const features = [
   {
     icon: ShieldCheck,
-    title: 'Fraud Detection',
+    title: 'AI Monitoring',
     desc: 'AI-powered anomaly detection identifies suspicious expenditure patterns, duplicate projects, and contractor irregularities across all MPLADS schemes.',
-    color: 'from-red-500 to-rose-600',
-    bgColor: 'bg-red-50',
-    iconColor: 'text-red-600',
+    color: 'from-emerald-500 to-teal-600',
+    bgColor: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+    border: 'border-emerald-100',
   },
   {
     icon: Activity,
@@ -18,6 +19,7 @@ const features = [
     color: 'from-blue-500 to-indigo-600',
     bgColor: 'bg-blue-50',
     iconColor: 'text-blue-600',
+    border: 'border-blue-100',
   },
   {
     icon: Bell,
@@ -26,42 +28,49 @@ const features = [
     color: 'from-amber-500 to-orange-600',
     bgColor: 'bg-amber-50',
     iconColor: 'text-amber-600',
+    border: 'border-amber-100',
   },
 ];
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-gov-blue-500 selection:text-white">
       {/* Reusable Navbar */}
       <Navbar />
 
       {/* Hero Section */}
-      <section className="gradient-hero text-white pt-28 pb-24 relative overflow-hidden">
-        {/* Ashoka Chakra Watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <svg
-            className="w-[500px] h-[500px] opacity-[0.04]"
-            viewBox="0 0 200 200"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-navy-900 text-white">
+        {/* Background Gradients & Effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-gov-blue-700" />
+        
+        {/* Decorative Grid */}
+        <div className="absolute inset-0 opacity-[0.05]">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="landing-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#landing-grid)" />
+          </svg>
+        </div>
+
+        {/* Ashoka Chakra */}
+        <div className="absolute top-1/2 right-[-10%] -translate-y-1/2 pointer-events-none opacity-[0.08]">
+          <svg width="800" height="800" viewBox="0 0 200 200" fill="none">
             <circle cx="100" cy="100" r="95" stroke="white" strokeWidth="2" />
+            <circle cx="100" cy="100" r="85" stroke="white" strokeWidth="1" strokeDasharray="2 4" />
             <circle cx="100" cy="100" r="30" stroke="white" strokeWidth="2" />
             <circle cx="100" cy="100" r="10" fill="white" />
-            {/* 24 spokes of Ashoka Chakra */}
             {Array.from({ length: 24 }).map((_, i) => {
               const angle = (i * 15) * (Math.PI / 180);
-              const x1 = 100 + 30 * Math.cos(angle);
-              const y1 = 100 + 30 * Math.sin(angle);
-              const x2 = 100 + 95 * Math.cos(angle);
-              const y2 = 100 + 95 * Math.sin(angle);
               return (
                 <line
                   key={i}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
+                  x1={100 + 30 * Math.cos(angle)}
+                  y1={100 + 30 * Math.sin(angle)}
+                  x2={100 + 95 * Math.cos(angle)}
+                  y2={100 + 95 * Math.sin(angle)}
                   stroke="white"
                   strokeWidth="1.5"
                 />
@@ -70,27 +79,21 @@ export default function Landing() {
           </svg>
         </div>
 
-        {/* Decorative circles */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <div className="absolute top-10 right-20 w-72 h-72 rounded-full border border-white/30" />
-          <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full border border-white/20" />
-        </div>
-
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6 animate-fade-in">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs font-medium text-slate-200 tracking-wide">Government of India • MoSPI Initiative</span>
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8 backdrop-blur-sm animate-fade-in shadow-lg shadow-black/10">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse border border-emerald-200" />
+              <span className="text-xs font-semibold text-white tracking-wide uppercase">MoSPI Official Platform</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight animate-fade-in">
-              AI-Powered Surveillance &{' '}
-              <span className="bg-gradient-to-r from-indigo-300 via-blue-300 to-cyan-300 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-[1.15] animate-slide-up tracking-tight drop-shadow-xl">
+              AI-Powered Surveillance &<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-blue-200 to-indigo-300">
                 Analytics for MPLADS
               </span>
             </h1>
 
-            <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up">
+            <p className="text-lg md:text-xl text-sky-100/90 mb-10 leading-relaxed animate-slide-up max-w-2xl mx-auto font-medium drop-shadow-md">
               Transforming MPLADS project monitoring with artificial intelligence — detecting anomalies, 
               predicting risks, and ensuring transparent utilization of national development funds.
             </p>
@@ -98,14 +101,14 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 bg-white text-navy-800 font-semibold px-8 py-3.5 rounded-xl hover:bg-slate-100 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2 bg-white text-navy-900 font-bold px-8 py-4 rounded-xl hover:bg-slate-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 group"
               >
-                <Lock className="w-5 h-5" />
+                <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 Access Login Portal
               </Link>
               <a
-                href="#features"
-                className="inline-flex items-center gap-2 bg-white/10 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/20 transition-all border border-white/20"
+                href="#platform"
+                className="inline-flex items-center justify-center gap-2 bg-navy-800/40 text-white font-semibold px-8 py-4 rounded-xl hover:bg-navy-800/60 transition-all border border-white/20 backdrop-blur-md"
               >
                 Learn More
                 <ArrowRight className="w-5 h-5" />
@@ -115,31 +118,30 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section — Exactly 3 Cards */}
-      <section id="features" className="py-20 bg-slate-50">
+      {/* Features Section */}
+      <section id="platform" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-14">
-            <p className="text-sm font-semibold text-gov-blue-600 uppercase tracking-wider mb-2">Platform Capabilities</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-800">
+          <div className="text-center mb-16">
+            <span className="text-xs font-bold text-gov-blue-600 bg-gov-blue-50 px-3 py-1 rounded-full uppercase tracking-widest border border-gov-blue-100">Platform Capabilities</span>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 mt-6 mb-4 tracking-tight">
               Intelligent Oversight at Scale
             </h2>
-            <p className="text-slate-500 mt-3 max-w-xl mx-auto">
-              Three core pillars powering data-driven MPLADS monitoring across India.
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+              Three core pillars powering data-driven MPLADS monitoring, delivering complete transparency and actionable insights for district authorities.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {features.map((f, idx) => (
               <div
                 key={f.title}
-                className="bg-white rounded-2xl p-7 border border-slate-200 hover:shadow-xl hover:border-gov-blue-200 transition-all duration-300 group hover:-translate-y-1"
-                style={{ animationDelay: `${idx * 150}ms` }}
+                className={`bg-white rounded-3xl p-8 border ${f.border} shadow-lg shadow-slate-200/40 hover:shadow-xl transition-all duration-300 group hover:-translate-y-2`}
               >
-                <div className={`w-14 h-14 rounded-xl ${f.bgColor} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                  <f.icon className={`w-7 h-7 ${f.iconColor}`} />
+                <div className={`w-16 h-16 rounded-2xl ${f.bgColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner`}>
+                  <f.icon className={`w-8 h-8 ${f.iconColor}`} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">{f.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">{f.title}</h3>
+                <p className="text-base text-slate-600 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -147,13 +149,16 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-navy-900 text-slate-400 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="bg-navy-950 text-slate-400 py-10 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div>
-            <p className="text-sm font-semibold text-white">MPLADS DRISHTI</p>
-            <p className="text-[10px] tracking-wider mt-0.5">TRANSPARENT DEVELOPMENT • STRONGER INDIA</p>
+            <p className="text-base font-bold text-white mb-1 tracking-wide">MPLADS DRISHTI</p>
+            <p className="text-xs font-medium tracking-widest uppercase text-sky-500/80">Transparent Development • Stronger India</p>
           </div>
-          <p className="text-xs">SIH 2026 • Problem #26102 • MoSPI • Smart Automation</p>
+          <div className="text-xs font-medium leading-relaxed">
+            <p>Smart India Hackathon 2026 • Problem Statement #26102</p>
+            <p className="text-slate-500 mt-1">Ministry of Statistics & Programme Implementation • Government of India</p>
+          </div>
         </div>
       </footer>
     </div>

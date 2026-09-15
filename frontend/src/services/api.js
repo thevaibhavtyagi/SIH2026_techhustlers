@@ -132,26 +132,20 @@ export const getDashboardStats = async (role = 'admin', scope = null) => {
 };
 
 export const getProjects = async (filters = {}) => {
-  await delay(200);
-  let results = MOCK_PROJECTS;
-
-  if (filters.state) results = results.filter((p) => p.state === filters.state);
-  if (filters.district) results = results.filter((p) => p.district === filters.district);
-  if (filters.constituency) results = results.filter((p) => p.constituency === filters.constituency);
-  if (filters.status) results = results.filter((p) => p.status === filters.status);
-  if (filters.riskLevel) results = results.filter((p) => p.riskLevel === filters.riskLevel);
+  const data = await riskApi.getProjects(filters);
+  let results = data.projects || [];
+  
   if (filters.search) {
     const s = filters.search.toLowerCase();
     results = results.filter(
-      (p) => p.id.toLowerCase().includes(s) || p.name.toLowerCase().includes(s) || p.district.toLowerCase().includes(s)
+      (p) => p.id.toLowerCase().includes(s) || p.name.toLowerCase().includes(s) || p.district?.toLowerCase().includes(s)
     );
   }
   return results;
 };
 
 export const getProjectById = async (id) => {
-  await delay(200);
-  return MOCK_PROJECTS.find((p) => p.id === id) || null;
+  return await riskApi.getProject(id);
 };
 
 export const getContractors = async () => {

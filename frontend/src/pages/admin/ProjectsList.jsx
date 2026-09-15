@@ -98,7 +98,7 @@ export default function ProjectsList() {
           data={projects} 
           loading={loading}
           pageSize={10}
-          onRowClick={(row) => navigate(`/admin/projects/${row.id}`)}
+          onRowClick={(row) => navigate(`/admin/projects/${encodeURIComponent(row.id)}`)}
           className="border-0 shadow-none rounded-t-none"
         />
       </div>

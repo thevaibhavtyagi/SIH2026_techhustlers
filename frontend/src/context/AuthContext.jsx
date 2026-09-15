@@ -9,8 +9,17 @@ const DEMO_USERS = [
     password: 'Admin@123',
     name: 'Dr. Arun Mehta',
     role: ROLES.ADMIN,
-    designation: 'Ministry Admin',
+    designation: 'MoSPI Admin',
     department: 'Ministry of Statistics & Programme Implementation',
+  },
+  {
+    email: 'dm.varanasi@mpladsdrishti.gov.in',
+    password: 'DM@123',
+    name: 'Smt. Priya Sharma',
+    role: ROLES.DISTRICT_NODAL,
+    designation: 'District Magistrate',
+    district: 'Varanasi',
+    state: 'Uttar Pradesh',
   },
   {
     email: 'mp.varanasi@mpladsdrishti.gov.in',
@@ -20,14 +29,6 @@ const DEMO_USERS = [
     designation: 'Member of Parliament',
     constituency: 'Varanasi',
     state: 'Uttar Pradesh',
-  },
-  {
-    email: 'citizen@demo.com',
-    password: 'Citizen@123',
-    name: 'Ananya Verma',
-    role: ROLES.CITIZEN,
-    state: 'Uttar Pradesh',
-    district: 'Varanasi',
   },
 ];
 
@@ -47,7 +48,7 @@ function authReducer(state, action) {
     case 'LOGOUT':
       return { ...state, user: null, isAuthenticated: false, loading: false, error: null };
     case 'REGISTER_SUCCESS':
-      return { ...state, user: action.payload, isAuthenticated: true, loading: false, error: null };
+      return { ...state, loading: false, error: null };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'CLEAR_ERROR':
@@ -87,7 +88,7 @@ export function AuthProvider({ children }) {
       return { success: true, user: userData };
     }
 
-    // Check registered citizens
+    // Check registered users (from Signup page)
     const registeredUsers = JSON.parse(localStorage.getItem('mplads_registered_users') || '[]');
     const registered = registeredUsers.find(u => u.email === email && u.password === password);
     if (registered) {
@@ -97,7 +98,7 @@ export function AuthProvider({ children }) {
       return { success: true, user: userData };
     }
 
-    dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid email or password. Please check your credentials.' });
+    dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid Credentials' });
     return { success: false };
   };
 
@@ -117,24 +118,19 @@ export function AuthProvider({ children }) {
       email: formData.email,
       password: formData.password,
       name: formData.name,
-      mobile: formData.mobile,
-      role: ROLES.CITIZEN,
-      state: formData.state,
-      district: formData.district,
-      constituency: formData.constituency || null,
+      role: formData.role, // Role comes from the Signup dropdown
     };
 
     registeredUsers.push(newUser);
     localStorage.setItem('mplads_registered_users', JSON.stringify(registeredUsers));
 
-    const { password: _, ...userData } = newUser;
-    localStorage.setItem('mplads_user', JSON.stringify(userData));
-    dispatch({ type: 'REGISTER_SUCCESS', payload: userData });
-    return { success: true, user: userData };
+    dispatch({ type: 'REGISTER_SUCCESS' });
+    return { success: true };
   };
 
   const logout = () => {
     localStorage.removeItem('mplads_user');
+    localStorage.removeItem('mplads_token');
     dispatch({ type: 'LOGOUT' });
   };
 

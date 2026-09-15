@@ -2,8 +2,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const mlService = require('../services/ml.service');
 
 const getProjects = asyncHandler(async (req, res) => {
-  const { limit, offset, risk_level: riskLevel, state } = req.query;
-  const data = await mlService.getProjects({ limit, offset, riskLevel, state });
+  const { limit, offset, risk_level: riskLevel, state, district, constituency, status } = req.query;
+  const data = await mlService.getProjects({ limit, offset, riskLevel, state, district, constituency, status });
   res.json({ success: true, data });
 });
 

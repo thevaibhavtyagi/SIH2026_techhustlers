@@ -12,8 +12,6 @@ const tokenService = require('./token.service');
 
 // ---------- Login ----------
 
-const isLocked = (user) => user.locked_until && new Date(user.locked_until) > new Date();
-
 const login = async ({ email, password, role }, { ip, userAgent } = {}) => {
   const user = await userRepo.findByEmail(email);
 
@@ -27,27 +25,10 @@ const login = async ({ email, password, role }, { ip, userAgent } = {}) => {
     throw ApiError.forbidden('This account has been deactivated. Contact an administrator.');
   }
 
-  if (isLocked(user)) {
-    const minutesLeft = Math.ceil((new Date(user.locked_until) - Date.now()) / 60000);
-    throw ApiError.tooManyRequests(
-      `Account temporarily locked due to repeated failed login attempts. Try again in ${minutesLeft} minute(s).`
-    );
-  }
-
   const passwordOk = await verifyPassword(password, user.password_hash);
   const roleOk = user.role === role;
 
   if (!passwordOk || !roleOk) {
-    const attempts = user.failed_login_attempts + 1;
-    const shouldLock = attempts >= env.accountLock.threshold;
-
-    await userRepo.recordFailedLogin(user.id, {
-      failedLoginAttempts: shouldLock ? 0 : attempts,
-      lockedUntil: shouldLock
-        ? new Date(Date.now() + env.accountLock.minutes * 60000).toISOString()
-        : null,
-    });
-
     throw invalidCredentials();
   }
 

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+  
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - ML_ENGINE_URL=http://ml_engine:8000
+      - DATABASE_URL=postgres://user:password@database:5432/mplads
+    depends_on:
+      - database
+      - ml_engine
+
+  ml_engine:
+    build: ./ml_engine
+    ports:
+      - "8000:8000"
+    
+  database:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mplads
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ./database/dummy_data.sql:/docker-entrypoint-initdb.d/2-dummy_data.sql

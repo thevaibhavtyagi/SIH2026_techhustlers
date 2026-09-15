@@ -1,15 +1,24 @@
 // ========== Roles ==========
 export const ROLES = {
   ADMIN: 'admin',
+  DISTRICT_NODAL: 'district_nodal',
   MP: 'mp',
   CITIZEN: 'citizen',
 };
 
 export const ROLE_LABELS = {
-  admin: 'Ministry Admin',
+  admin: 'MoSPI Admin',
+  district_nodal: 'District Authority',
   mp: 'Member of Parliament',
   citizen: 'Citizen',
 };
+
+// ========== Signup Role Options (for internal Signup page) ==========
+export const SIGNUP_ROLES = [
+  { value: 'admin', label: 'MoSPI Admin' },
+  { value: 'district_nodal', label: 'District Authority' },
+  { value: 'mp', label: 'MP' },
+];
 
 // ========== Indian States & UTs ==========
 export const INDIAN_STATES = [
@@ -112,7 +121,7 @@ export const REPORT_TYPES = [
 
 // ========== Demo Credentials ==========
 export const DEMO_CREDENTIALS = [
-  { role: 'Ministry Admin', email: 'admin@mpladsdrishti.gov.in', password: 'Admin@123' },
+  { role: 'MoSPI Admin', email: 'admin@mpladsdrishti.gov.in', password: 'Admin@123' },
+  { role: 'District Authority', email: 'dm.varanasi@mpladsdrishti.gov.in', password: 'DM@123' },
   { role: 'Member of Parliament', email: 'mp.varanasi@mpladsdrishti.gov.in', password: 'MP@123' },
-  { role: 'Citizen', email: 'citizen@demo.com', password: 'Citizen@123' },
 ];

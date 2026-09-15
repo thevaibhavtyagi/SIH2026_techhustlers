@@ -1,33 +1,34 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/common/Toast';
-import ProtectedRoute from './components/common/ProtectedRoute';
 
-// Layouts
-import AdminLayout from './layouts/AdminLayout';
-import MPLayout from './layouts/MPLayout';
-import CitizenLayout from './layouts/CitizenLayout';
-
-// Public Pages
+// Pages
 import Landing from './pages/Landing';
 import Login from './pages/Login';
-import Register from './pages/Register';
+import Signup from './pages/Signup';
+import DashboardAccess from './pages/DashboardAccess';
 
-// Admin Pages
-import AdminDashboard from './pages/admin/Dashboard';
-import ProjectsList from './pages/admin/ProjectsList';
-import ProjectDetail from './pages/admin/ProjectDetail';
-import RiskEngine from './pages/admin/RiskEngine';
-import Alerts from './pages/admin/Alerts';
+// Protected Route wrapper
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
 
-// MP Pages
-import MPDashboard from './pages/mp/Dashboard';
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-navy-800/20 border-t-navy-800 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-slate-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-// Citizen Pages
-import CitizenDashboard from './pages/citizen/Dashboard';
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-// Placeholder for missing pages
-import Placeholder from './pages/Placeholder';
+  return children;
+}
 
 export default function App() {
   return (
@@ -38,63 +39,19 @@ export default function App() {
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/register" element={<Signup />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="projects" element={<ProjectsList />} />
-              <Route path="projects/:id" element={<ProjectDetail />} />
-              <Route path="risk-engine" element={<RiskEngine />} />
-              <Route path="alerts" element={<Alerts />} />
-              {/* Placeholders for remaining Admin menu items */}
-              <Route path="anomalies" element={<Placeholder title="Fraud & Anomalies" />} />
-              <Route path="expenditure" element={<Placeholder title="Expenditure" />} />
-              <Route path="progress" element={<Placeholder title="Progress & Delays" />} />
-              <Route path="contractors" element={<Placeholder title="Contractors" />} />
-              <Route path="map" element={<Placeholder title="Geographic Intel" />} />
-              <Route path="investigations" element={<Placeholder title="Investigations" />} />
-              <Route path="reports" element={<Placeholder title="Reports" />} />
-            </Route>
+            {/* Protected Dashboard — role logic is inside DashboardAccess */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardAccess />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* MP Routes */}
-            <Route path="/mp" element={
-              <ProtectedRoute allowedRoles={['mp']}>
-                <MPLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/mp/dashboard" replace />} />
-              <Route path="dashboard" element={<MPDashboard />} />
-              {/* Placeholders for remaining MP menu items */}
-              <Route path="projects" element={<Placeholder title="My Projects" />} />
-              <Route path="funds" element={<Placeholder title="Funds" />} />
-              <Route path="progress" element={<Placeholder title="Progress" />} />
-              <Route path="risk" element={<Placeholder title="Risk Insights" />} />
-              <Route path="alerts" element={<Placeholder title="Alerts" />} />
-            </Route>
-
-            {/* Citizen Routes */}
-            <Route path="/citizen" element={
-              <ProtectedRoute allowedRoles={['citizen']}>
-                <CitizenLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/citizen/dashboard" replace />} />
-              <Route path="dashboard" element={<CitizenDashboard />} />
-              {/* Placeholders for remaining Citizen menu items */}
-              <Route path="projects" element={<Placeholder title="Explore Projects" />} />
-              <Route path="nearby" element={<Placeholder title="Nearby Development" />} />
-              <Route path="my-reports" element={<Placeholder title="My Reports" />} />
-              <Route path="report" element={<Placeholder title="Report a Concern" />} />
-              <Route path="profile" element={<Placeholder title="Profile" />} />
-            </Route>
-
-            {/* Fallback */}
+            {/* Fallback — redirect everything else to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>

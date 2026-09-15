@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
 import { Eye, EyeOff, Lock, Mail, UserCog, Shield, TrendingUp, AlertTriangle, BarChart3, Activity, Globe, Fingerprint } from 'lucide-react';
-import { SIGNUP_ROLES } from '../utils/constants';
+import { LOGIN_ROLES, ROLE_DASHBOARD_PATH } from '../utils/constants';
 import logo from '../assets/mplads-drishti-logo.png';
 
 export default function Login() {
@@ -25,19 +25,15 @@ export default function Login() {
     setLoading(true);
     clearError();
 
-    setTimeout(() => {
-      const result = login(email, password, role);
-      setLoading(false);
+    const result = await login(email, password, role);
+    setLoading(false);
 
-      if (result.success) {
-        const token = 'jwt_' + btoa(JSON.stringify({ role: result.user.role, ts: Date.now() }));
-        localStorage.setItem('mplads_token', token);
-        toast.success(`Welcome, ${result.user.name}!`, 'Login Successful');
-        navigate('/dashboard');
-      } else {
-        toast.error('Invalid Credentials', 'Authentication Failed');
-      }
-    }, 1200);
+    if (result.success) {
+      toast.success(`Welcome, ${result.user.name}!`, 'Login Successful');
+      navigate(ROLE_DASHBOARD_PATH[result.user.role] || '/dashboard');
+    } else {
+      toast.error(result.error || 'Invalid Credentials', 'Authentication Failed');
+    }
   };
 
   return (
@@ -130,7 +126,7 @@ export default function Login() {
                   className="w-full pl-12 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:bg-white focus:border-gov-blue-500 focus:ring-4 focus:ring-gov-blue-500/15 appearance-none transition-all cursor-pointer font-medium text-slate-700 shadow-sm"
                 >
                   <option value="" className="text-slate-400">Select your role</option>
-                  {SIGNUP_ROLES.map(r => (
+                  {LOGIN_ROLES.map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>

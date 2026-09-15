@@ -1,36 +1,7 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import { ROLES } from '../utils/constants';
+import { createContext, useContext, useReducer, useEffect, useRef } from 'react';
+import { authApi, setAccessToken } from '../services/api';
 
 const AuthContext = createContext(null);
-
-const DEMO_USERS = [
-  {
-    email: 'admin@mpladsdrishti.gov.in',
-    password: 'Admin@123',
-    name: 'Dr. Arun Mehta',
-    role: ROLES.ADMIN,
-    designation: 'MoSPI Admin',
-    department: 'Ministry of Statistics & Programme Implementation',
-  },
-  {
-    email: 'dm.varanasi@mpladsdrishti.gov.in',
-    password: 'DM@123',
-    name: 'Smt. Priya Sharma',
-    role: ROLES.DISTRICT_NODAL,
-    designation: 'District Magistrate',
-    district: 'Varanasi',
-    state: 'Uttar Pradesh',
-  },
-  {
-    email: 'mp.varanasi@mpladsdrishti.gov.in',
-    password: 'MP@123',
-    name: 'Shri Ramesh Tiwari',
-    role: ROLES.MP,
-    designation: 'Member of Parliament',
-    constituency: 'Varanasi',
-    state: 'Uttar Pradesh',
-  },
-];
 
 const initialState = {
   user: null,
@@ -47,8 +18,6 @@ function authReducer(state, action) {
       return { ...state, user: null, isAuthenticated: false, loading: false, error: action.payload };
     case 'LOGOUT':
       return { ...state, user: null, isAuthenticated: false, loading: false, error: null };
-    case 'REGISTER_SUCCESS':
-      return { ...state, loading: false, error: null };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'CLEAR_ERROR':
@@ -58,79 +27,57 @@ function authReducer(state, action) {
   }
 }
 
+const errorMessage = (err) => err?.response?.data?.message || 'Something went wrong. Please try again.';
+
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  // The refresh token is single-use (rotated on every call), so two
+  // concurrent calls — e.g. React StrictMode's double-invoked mount effect —
+  // would race: one rotates it and wins, the other reuses the now-revoked
+  // token and 401s, potentially clobbering state after the winner already
+  // succeeded. Guard so the effect's body only ever actually runs once.
+  const didInit = useRef(false);
 
+  // On first load there's no access token in memory (it's never persisted),
+  // so silently try to mint a new one from the httpOnly refresh cookie.
+  // A 401 here just means "not logged in" — not an error to surface.
   useEffect(() => {
-    const stored = localStorage.getItem('mplads_user');
-    if (stored) {
+    if (didInit.current) return;
+    didInit.current = true;
+
+    (async () => {
       try {
-        const user = JSON.parse(stored);
+        const { accessToken, user } = await authApi.refresh();
+        setAccessToken(accessToken);
         dispatch({ type: 'LOGIN_SUCCESS', payload: user });
       } catch {
-        localStorage.removeItem('mplads_user');
+        setAccessToken(null);
         dispatch({ type: 'SET_LOADING', payload: false });
       }
-    } else {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
+    })();
   }, []);
 
-  const login = (email, password, role) => {
+  const login = async (email, password, role) => {
     dispatch({ type: 'CLEAR_ERROR' });
-
-    // Check demo users
-    const demoUser = DEMO_USERS.find(u => u.email === email && u.password === password && u.role === role);
-    if (demoUser) {
-      const { password: _, ...userData } = demoUser;
-      localStorage.setItem('mplads_user', JSON.stringify(userData));
-      dispatch({ type: 'LOGIN_SUCCESS', payload: userData });
-      return { success: true, user: userData };
+    try {
+      const { user, accessToken } = await authApi.login(email, password, role);
+      setAccessToken(accessToken);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+      return { success: true, user };
+    } catch (err) {
+      const message = errorMessage(err);
+      dispatch({ type: 'LOGIN_FAILURE', payload: message });
+      return { success: false, error: message };
     }
-
-    // Check registered users (from Signup page)
-    const registeredUsers = JSON.parse(localStorage.getItem('mplads_registered_users') || '[]');
-    const registered = registeredUsers.find(u => u.email === email && u.password === password && u.role === role);
-    if (registered) {
-      const { password: _, ...userData } = registered;
-      localStorage.setItem('mplads_user', JSON.stringify(userData));
-      dispatch({ type: 'LOGIN_SUCCESS', payload: userData });
-      return { success: true, user: userData };
-    }
-
-    dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid Credentials or Role' });
-    return { success: false };
   };
 
-  const register = (formData) => {
-    dispatch({ type: 'CLEAR_ERROR' });
-
-    const registeredUsers = JSON.parse(localStorage.getItem('mplads_registered_users') || '[]');
-
-    // Check for existing email
-    const allEmails = [...DEMO_USERS.map(u => u.email), ...registeredUsers.map(u => u.email)];
-    if (allEmails.includes(formData.email)) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: 'An account with this email already exists.' });
-      return { success: false };
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Best-effort — proceed to clear local state regardless.
     }
-
-    const newUser = {
-      email: formData.email,
-      password: formData.password,
-      name: formData.name,
-      role: formData.role, // Role comes from the Signup dropdown
-    };
-
-    registeredUsers.push(newUser);
-    localStorage.setItem('mplads_registered_users', JSON.stringify(registeredUsers));
-
-    dispatch({ type: 'REGISTER_SUCCESS' });
-    return { success: true };
-  };
-
-  const logout = () => {
-    localStorage.removeItem('mplads_user');
-    localStorage.removeItem('mplads_token');
+    setAccessToken(null);
     dispatch({ type: 'LOGOUT' });
   };
 
@@ -142,7 +89,6 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       ...state,
       login,
-      register,
       logout,
       clearError,
     }}>

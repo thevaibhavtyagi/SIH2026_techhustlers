@@ -3,7 +3,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    role VARCHAR(50) NOT NULL, -- 'admin', 'mp', 'citizen'
+    role VARCHAR(50) NOT NULL, -- 'admin', 'district_nodal', 'mp' — see database/auth_schema.sql (source of truth)
     constituency VARCHAR(100)
 );
 

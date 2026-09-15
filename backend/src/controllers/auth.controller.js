@@ -23,11 +23,6 @@ const clearRefreshCookie = (res) => {
 
 const requestMeta = (req) => ({ ip: req.ip, userAgent: req.headers['user-agent'] });
 
-const register = asyncHandler(async (req, res) => {
-  const user = await authService.register(req.body);
-  res.status(201).json({ success: true, message: 'Account created successfully', data: { user } });
-});
-
 const login = asyncHandler(async (req, res) => {
   const { user, accessToken, refreshToken } = await authService.login(req.body, requestMeta(req));
   setRefreshCookie(res, refreshToken);
@@ -74,4 +69,4 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Password changed. Please log in again on all devices.' });
 });
 
-module.exports = { register, login, refresh, logout, me, forgotPassword, resetPassword, changePassword };
+module.exports = { login, refresh, logout, me, forgotPassword, resetPassword, changePassword };

@@ -76,11 +76,11 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = (email, password) => {
+  const login = (email, password, role) => {
     dispatch({ type: 'CLEAR_ERROR' });
 
     // Check demo users
-    const demoUser = DEMO_USERS.find(u => u.email === email && u.password === password);
+    const demoUser = DEMO_USERS.find(u => u.email === email && u.password === password && u.role === role);
     if (demoUser) {
       const { password: _, ...userData } = demoUser;
       localStorage.setItem('mplads_user', JSON.stringify(userData));
@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
 
     // Check registered users (from Signup page)
     const registeredUsers = JSON.parse(localStorage.getItem('mplads_registered_users') || '[]');
-    const registered = registeredUsers.find(u => u.email === email && u.password === password);
+    const registered = registeredUsers.find(u => u.email === email && u.password === password && u.role === role);
     if (registered) {
       const { password: _, ...userData } = registered;
       localStorage.setItem('mplads_user', JSON.stringify(userData));
@@ -98,7 +98,7 @@ export function AuthProvider({ children }) {
       return { success: true, user: userData };
     }
 
-    dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid Credentials' });
+    dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid Credentials or Role' });
     return { success: false };
   };
 

@@ -24,6 +24,18 @@ const createUserSchema = z.object({
   state: z.string().trim().optional(),
   district: z.string().trim().optional(),
   constituency: z.string().trim().optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === ROLES.MP && !data.constituency) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Constituency is required for MPs', path: ['constituency'] });
+  }
+  if (data.role === ROLES.DISTRICT_NODAL) {
+    if (!data.state) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'State is required for District Nodal', path: ['state'] });
+    }
+    if (!data.district) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'District is required for District Nodal', path: ['district'] });
+    }
+  }
 });
 
 const updateUserSchema = z

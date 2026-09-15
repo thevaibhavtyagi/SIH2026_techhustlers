@@ -50,30 +50,27 @@ class ProjectService:
         offset: int = 0,
         risk_level: str | None = None,
         state: str | None = None,
+        district: str | None = None,
+        constituency: str | None = None,
+        status: str | None = None,
     ):
 
         df = self.data
 
-        # Filter by risk level
         if risk_level:
-            df = df[
-                df["final_ai_risk_level"]
-                .astype(str)
-                .str.upper()
-                == risk_level.upper()
-            ]
+            df = df[df["final_ai_risk_level"].astype(str).str.upper() == risk_level.upper()]
 
-        # Filter by state
         if state:
-            df = df[
-                df["state"]
-                .astype(str)
-                .str.lower()
-                .str.contains(
-                    state.lower(),
-                    na=False
-                )
-            ]
+            df = df[df["state"].astype(str).str.lower().str.contains(state.lower(), na=False)]
+            
+        if district:
+            df = df[df["district"].astype(str).str.lower().str.contains(district.lower(), na=False)]
+            
+        if constituency:
+            df = df[df["constituency"].astype(str).str.lower().str.contains(constituency.lower(), na=False)]
+            
+        if status:
+            df = df[df["work_status"].astype(str).str.lower().str.contains(status.lower(), na=False)]
 
         total = len(df)
 

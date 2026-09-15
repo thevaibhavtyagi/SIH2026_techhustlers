@@ -8,7 +8,8 @@ import { PageHeader, ChartCard, ProgressBar, LoadingState, AIInsightCard, Timeli
 import { formatCurrency, formatDate, getRiskLevel } from '../../utils/formatters';
 
 export default function ProjectDetail() {
-  const { id } = useParams();
+  const { id: rawId } = useParams();
+  const id = decodeURIComponent(rawId ?? '');
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [contractor, setContractor] = useState(null);

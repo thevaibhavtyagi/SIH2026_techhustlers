@@ -19,12 +19,18 @@ def get_projects(
     offset: int = Query(0, ge=0),
     risk_level: str | None = None,
     state: str | None = None,
+    district: str | None = None,
+    constituency: str | None = None,
+    status: str | None = None,
 ):
     return project_service.get_projects(
         limit=limit,
         offset=offset,
         risk_level=risk_level,
         state=state,
+        district=district,
+        constituency=constituency,
+        status=status,
     )
 
 

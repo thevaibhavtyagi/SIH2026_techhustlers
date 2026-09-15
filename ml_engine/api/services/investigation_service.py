@@ -12,11 +12,15 @@ QUEUE_FILE = (
     / "investigation_queue.csv"
 )
 
-REPORT_FILE = (
+# v3 has real grounded LLM text (column: grounded_llm_report).
+# v4 has the right schema but all 20 entries have report_status=FAILED
+# due to LLM rate-limit errors during generation.
+# We merge v3's real text into the report dataframe at startup.
+REPORT_FILE_V3 = (
     BASE_DIR
     / "data"
     / "processed"
-    / "grounded_llm_investigation_reports_v4.csv"
+    / "grounded_llm_investigation_reports_v3.csv"
 )
 
 
@@ -29,19 +33,57 @@ class InvestigationService:
             low_memory=False
         )
 
-        self.reports = pd.read_csv(
-            REPORT_FILE,
-            low_memory=False
+        # Build the reports table:
+        # 1. Start from queue columns needed by InvestigationReportResponse
+        report_cols = [
+            "investigation_rank", "work_id", "state", "constituency",
+            "final_ai_risk_score", "final_ai_risk_level",
+            "risk_detection_confidence", "active_risk_engines",
+            "available_risk_engines", "primary_risk_source",
+            "investigation_priority_score", "investigation_priority_category",
+        ]
+        base = self.queue[
+            [c for c in report_cols if c in self.queue.columns]
+        ].copy()
+
+        # 2. Merge real LLM report text from v3
+        try:
+            v3 = pd.read_csv(REPORT_FILE_V3, low_memory=False)
+            # v3 uses "grounded_llm_report"; rename to the schema field
+            if "grounded_llm_report" in v3.columns:
+                v3 = v3[["work_id", "grounded_llm_report"]].rename(
+                    columns={"grounded_llm_report": "grounded_llm_investigation_report"}
+                )
+                base = base.merge(v3, on="work_id", how="left")
+            else:
+                base["grounded_llm_investigation_report"] = None
+            v3_loaded = True
+        except Exception as e:
+            print(f"Warning: could not load v3 reports: {e}")
+            base["grounded_llm_investigation_report"] = None
+            v3_loaded = False
+
+        # 3. Set report_status based on whether real text is present
+        has_text = (
+            base["grounded_llm_investigation_report"].notna()
+            & (base["grounded_llm_investigation_report"].astype(str).str.strip() != "")
         )
+        base["report_status"] = has_text.map(
+            {True: "COMPLETE", False: "NOT_GENERATED"}
+        )
+        base["report_file"] = None
+
+        self.reports = base
 
         print(
             f"Investigation queue loaded: "
             f"{len(self.queue)} projects"
         )
-
+        complete_count = (base["report_status"] == "COMPLETE").sum()
         print(
             f"Investigation reports loaded: "
-            f"{len(self.reports)} reports"
+            f"{len(base)} entries | {complete_count} with real LLM text"
+            f" (v3_source={'yes' if v3_loaded else 'no'})"
         )
 
     def _clean_records(self, df):
@@ -148,5 +190,11 @@ class InvestigationService:
             return None
 
         record = self._clean_records(df)
+        result = record[0]
 
-        return record[0]
+        # Only return if there is actual report content.
+        # A queue entry with no LLM text is not a completed report.
+        if not result.get("grounded_llm_investigation_report"):
+            return None
+
+        return result

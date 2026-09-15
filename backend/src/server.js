@@ -1,18 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const env = require('./config/env');
+const app = require('./app');
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-// Routes will go here
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend is running' });
+const server = app.listen(env.port, () => {
+  console.log(`Server running on port ${env.port} [${env.nodeEnv}]`);
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const shutdown = (signal) => {
+  console.log(`${signal} received, shutting down gracefully...`);
+  server.close(() => process.exit(0));
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FolderKanban, BrainCircuit, AlertTriangle,
   IndianRupee, Clock, HardHat, MapPin, Bell, Search as SearchIcon,
   FileText, MessageSquare, ChevronLeft, ChevronRight, LogOut,
-  User, Shield, Building2, Eye, FileWarning, Menu, X
+  User, Shield, Building2, Eye, FileWarning, Menu, X, UserPlus
 } from 'lucide-react';
 import logo from '../../assets/mplads-drishti-logo.png';
 
@@ -22,6 +22,7 @@ const ADMIN_MENU = [
   { label: 'Alerts', path: '/admin/alerts', icon: Bell },
   { label: 'Investigations', path: '/admin/investigations', icon: SearchIcon },
   { label: 'Reports', path: '/admin/reports', icon: FileText },
+  { label: 'Create Account', path: '/admin/provision-account', icon: UserPlus },
 ];
 
 const MP_MENU = [

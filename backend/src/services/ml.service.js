@@ -20,14 +20,44 @@ const call = async (fn) => {
 
 // ---------- Projects ----------
 
-const getProjects = ({ limit, offset, riskLevel, state } = {}) =>
-  call(() =>
+const transformProject = (p) => {
+  if (!p) return null;
+  return {
+    ...p,
+    id: p.work_id,
+    name: p.work_description || p.work_category || 'Untitled Project',
+    state: p.state,
+    district: p.district,
+    constituency: p.constituency,
+    workType: p.work_category,
+    status: p.work_status || 'In Progress',
+    progress: p.expenditure_ratio ? Math.round(p.expenditure_ratio * 100) : 0,
+    expectedCompletion: p.completion_date,
+    sanctionDate: p.sanction_date,
+    sanctionedAmount: p.sanction_amount || 0,
+    expenditure: p.total_expenditure || 0,
+    riskScore: p.final_ai_risk_score ? Math.round(p.final_ai_risk_score) : 0,
+    riskLevel: p.final_ai_risk_level,
+    contractorId: 'CTR-' + (p.work_id ? p.work_id.slice(-4) : '0000')
+  };
+};
+
+const getProjects = async ({ limit, offset, riskLevel, state, district, constituency, status } = {}) => {
+  const data = await call(() =>
     mlClient.get('/projects', {
-      params: { limit, offset, risk_level: riskLevel, state },
+      params: { limit, offset, risk_level: riskLevel, state, district, constituency, status },
     })
   );
+  if (data && data.projects) {
+    data.projects = data.projects.map(transformProject);
+  }
+  return data;
+};
 
-const getProject = (workId) => call(() => mlClient.get(`/projects/${encodeURIComponent(workId)}`));
+const getProject = async (workId) => {
+  const data = await call(() => mlClient.get(`/projects/${encodeURIComponent(workId)}`));
+  return transformProject(data);
+};
 
 // ---------- Risk ----------
 

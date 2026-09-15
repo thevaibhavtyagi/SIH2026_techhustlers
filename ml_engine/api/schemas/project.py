@@ -9,6 +9,10 @@ class ProjectResponse(BaseModel):
     constituency: Optional[str] = None
     work_category: Optional[str] = None
     work_description: Optional[str] = None
+    work_status: Optional[str] = None
+    sanction_date: Optional[str] = None
+    completion_date: Optional[str] = None
+
 
     recommended_amount: Optional[float] = None
     sanction_amount: Optional[float] = None

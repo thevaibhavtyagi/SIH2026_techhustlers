@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FolderKanban, BrainCircuit, AlertTriangle,
   IndianRupee, Clock, HardHat, MapPin, Bell, Search as SearchIcon,
   FileText, MessageSquare, ChevronLeft, ChevronRight, LogOut,
-  User, Shield, Building2, Eye, FileWarning, Home, Flag, UserCircle, Menu, X
+  User, Shield, Building2, Eye, FileWarning, Menu, X
 } from 'lucide-react';
 import logo from '../../assets/mplads-drishti-logo.png';
 
@@ -33,20 +33,17 @@ const MP_MENU = [
   { label: 'Alerts', path: '/mp/alerts', icon: Bell },
 ];
 
-const CITIZEN_MENU = [
-  { label: 'Dashboard', path: '/citizen/dashboard', icon: Home },
-  { label: 'Explore Projects', path: '/citizen/projects', icon: FolderKanban },
-  { label: 'Nearby Development', path: '/citizen/nearby', icon: MapPin },
-  { label: 'My Reports', path: '/citizen/my-reports', icon: FileText },
-  { label: 'Report a Concern', path: '/citizen/report', icon: Flag },
-  { label: 'Profile', path: '/citizen/profile', icon: UserCircle },
+const DISTRICT_MENU = [
+  { label: 'District Dashboard', path: '/district/dashboard', icon: LayoutDashboard },
+  { label: 'District Projects', path: '/district/projects', icon: FolderKanban },
+  { label: 'Local Alerts', path: '/district/alerts', icon: Bell },
 ];
 
-const ROLE_MENUS = { admin: ADMIN_MENU, mp: MP_MENU, citizen: CITIZEN_MENU };
+const ROLE_MENUS = { admin: ADMIN_MENU, mp: MP_MENU, district_nodal: DISTRICT_MENU };
 const ROLE_COLORS = {
   admin: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
   mp: 'bg-saffron-500/20 text-saffron-300 border-saffron-500/30',
-  citizen: 'bg-india-green-500/20 text-india-green-300 border-india-green-500/30',
+  district_nodal: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
 };
 
 export default function Sidebar() {

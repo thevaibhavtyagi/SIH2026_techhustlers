@@ -8,7 +8,7 @@ const password = z
   .regex(/[A-Z]/, 'Password must contain an uppercase letter')
   .regex(/[0-9]/, 'Password must contain a number');
 
-// Admin-provisioned accounts only — citizens self-register via /auth/register.
+// Every account is admin-provisioned — there is no public self-registration.
 const createUserSchema = z.object({
   name: z.string().trim().min(2, 'Name is required'),
   email: z.string().trim().toLowerCase().email('Valid email is required'),
@@ -44,7 +44,7 @@ const updateUserSchema = z
   .refine((data) => Object.keys(data).length > 0, { message: 'No fields provided to update' });
 
 const listUsersQuerySchema = z.object({
-  role: z.enum([ROLES.ADMIN, ROLES.DISTRICT_NODAL, ROLES.MP, ROLES.CITIZEN]).optional(),
+  role: z.enum([ROLES.ADMIN, ROLES.DISTRICT_NODAL, ROLES.MP]).optional(),
   isActive: z
     .enum(['true', 'false'])
     .transform((v) => v === 'true')

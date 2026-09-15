@@ -10,21 +10,7 @@ const password = z
 
 const email = z.string().trim().toLowerCase().email('Valid email is required');
 
-const roleEnum = z.enum([ROLES.ADMIN, ROLES.DISTRICT_NODAL, ROLES.MP, ROLES.CITIZEN]);
-
-const registerSchema = z.object({
-  name: z.string().trim().min(2, 'Name is required'),
-  email,
-  password,
-  phone: z
-    .string()
-    .trim()
-    .regex(/^[6-9]\d{9}$/, 'Valid 10-digit mobile number is required')
-    .optional(),
-  state: z.string().trim().optional(),
-  district: z.string().trim().optional(),
-  constituency: z.string().trim().optional(),
-});
+const roleEnum = z.enum([ROLES.ADMIN, ROLES.DISTRICT_NODAL, ROLES.MP]);
 
 const loginSchema = z.object({
   email,
@@ -56,7 +42,6 @@ const changePasswordSchema = z
   });
 
 module.exports = {
-  registerSchema,
   loginSchema,
   refreshSchema,
   forgotPasswordSchema,

@@ -5,32 +5,10 @@ const passwordResetRepo = require('../repositories/passwordResetToken.repository
 const { hashPassword, verifyPassword } = require('../utils/password');
 const { generateOpaqueToken, hashToken } = require('../utils/tokens');
 const { toPublicUser } = require('../utils/mapUser');
-const { ROLES } = require('../constants/roles');
 const tokenService = require('./token.service');
 
-// ---------- Registration (public — citizens only) ----------
-
-const register = async ({ name, email, password, phone, state, district, constituency }) => {
-  const existing = await userRepo.findByEmail(email);
-  if (existing) {
-    throw ApiError.conflict('An account with this email already exists');
-  }
-
-  const passwordHash = await hashPassword(password);
-
-  const user = await userRepo.create({
-    name,
-    email,
-    password_hash: passwordHash,
-    role: ROLES.CITIZEN, // Never trust a client-supplied role on public signup.
-    phone,
-    state,
-    district,
-    constituency,
-  });
-
-  return toPublicUser(user);
-};
+// There is no public self-registration — every account (admin, district_nodal,
+// mp) is provisioned by an admin via user.service.createProvisionedUser.
 
 // ---------- Login ----------
 
@@ -156,4 +134,4 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   await tokenService.revokeAllUserRefreshTokens(userId);
 };
 
-module.exports = { register, login, refresh, logout, forgotPassword, resetPassword, changePassword };
+module.exports = { login, refresh, logout, forgotPassword, resetPassword, changePassword };

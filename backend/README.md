@@ -18,12 +18,12 @@ key — not Supabase's own Auth/GoTrue.
 
 ## Auth model
 
-- **Roles**: `admin`, `district_nodal`, `mp`, `citizen` — must stay in sync with
-  `frontend/src/utils/constants.js`.
-- **Citizens** self-register via `POST /api/auth/register`. The role is always forced
-  to `citizen` server-side, regardless of what the client sends.
-- **admin / district_nodal / mp** accounts are provisioned by an existing admin via
-  `POST /api/users` (RBAC-protected). There is no public signup for these roles.
+- **Roles**: `admin`, `district_nodal`, `mp` — must stay in sync with
+  `frontend/src/utils/constants.js`. There is no public role.
+- **Every account** is provisioned by an existing admin via `POST /api/users`
+  (RBAC-protected). There is no public signup endpoint — the only way to get an
+  account is to already have an admin create one for you. The very first admin
+  is bootstrapped by `npm run seed`.
 - **Access tokens**: short-lived JWTs (15 min default), returned in the JSON response
   body, sent by the frontend as `Authorization: Bearer <token>`.
 - **Refresh tokens**: long-lived (7 days default), opaque random strings. Only their
@@ -47,7 +47,6 @@ All responses are `{ success, message?, data?, details? }`. All routes are under
 | Method | Path | Body | Notes |
 |---|---|---|---|
 | GET | `/health` | — | Liveness check |
-| POST | `/auth/register` | `name, email, password, phone?, state?, district?, constituency?` | Creates a **citizen** account |
 | POST | `/auth/login` | `email, password, role` | Sets refresh cookie, returns `{ user, accessToken }` |
 | POST | `/auth/refresh` | — (cookie) | Rotates refresh token, returns new `accessToken` |
 | POST | `/auth/logout` | — (cookie) | Revokes the refresh token, clears the cookie |
@@ -64,6 +63,42 @@ All responses are `{ success, message?, data?, details? }`. All routes are under
 | GET | `/users` | admin | List users — `?role=&isActive=&search=&page=&pageSize=` |
 | GET | `/users/:id` | admin | Get one user |
 | PATCH | `/users/:id` | admin | Update profile fields or `isActive` (deactivating kills their sessions) |
+
+## ml_engine gateway
+
+`backend` is also the API gateway in front of the Python risk-intelligence
+service in [`ml_engine/`](../ml_engine) (a FastAPI app over the MPLADS
+project/expenditure data — see `ml_engine/api/main.py`). That service has
+**no auth of its own**, so it must only ever be reached through here, never
+exposed directly to the browser. Set `ML_ENGINE_URL` in `.env` (default
+`http://localhost:8000`) and run it separately:
+
+```bash
+cd ml_engine
+python -m venv .venv
+./.venv/Scripts/pip install fastapi uvicorn pandas numpy pydantic   # or the full requirements.txt
+./.venv/Scripts/python -m uvicorn api.main:app --port 8000
+```
+
+| Method | Path | Roles | Forwards to |
+|---|---|---|---|
+| GET | `/projects` | any | `GET /projects` — `?limit=&offset=&risk_level=&state=` |
+| GET | `/projects/:workId` | any | `GET /projects/{work_id}` |
+| GET | `/risk/summary` | admin, district_nodal, mp | `GET /risk/summary` |
+| GET | `/risk/distribution` | admin, district_nodal, mp | `GET /risk/distribution` |
+| GET | `/investigations` | admin, district_nodal, mp | `GET /investigations` — `?limit=&offset=&risk_level=&priority_category=&state=` |
+| GET | `/investigations/:workId` | admin, district_nodal, mp | `GET /investigations/{work_id}` |
+| GET | `/investigations/:workId/report` | admin, district_nodal, mp | `GET /investigations/{work_id}/report` |
+| GET | `/analytics/overview` \| `/states` \| `/categories` \| `/constituencies` | any | same paths on `analytics` |
+
+`work_id` values contain slashes (e.g. `WS/MP620/2024-2025/133166`), so the
+`:workId` param is matched with `(.*)` rather than Express's default
+single-segment matching. If `ml_engine` is down or unreachable, these routes
+return `503` rather than crashing.
+
+`risk`/`investigations` are gated to internal roles (this is fraud-investigation
+tooling); `projects`/`analytics` are open to any authenticated role — adjust in
+`src/routes/*.routes.js` if that's not the split you want.
 
 ## RBAC
 

@@ -1,52 +1,66 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { adminApi } from '../services/api';
 import { useToast } from '../components/common/Toast';
 import { Eye, EyeOff, User, Mail, Lock, UserCog, CheckCircle, Shield } from 'lucide-react';
-import { SIGNUP_ROLES } from '../utils/constants';
+import { SIGNUP_ROLES, INDIAN_STATES, DISTRICTS } from '../utils/constants';
 import logo from '../assets/mplads-drishti-logo.png';
 
+// Admin-only: provisions admin / district_nodal / mp accounts via the real
+// backend (POST /api/users). Mounted at /admin/provision-account, gated by
+// ProtectedRoute allowedRoles={['admin']] — never a public route.
 export default function Signup() {
-  const { register, error, clearError } = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: '', state: '', district: '', constituency: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [error, setError] = useState(null);
 
   const update = (key, val) => {
-    setForm(f => ({ ...f, [key]: val }));
+    setForm(f => {
+      const next = { ...f, [key]: val };
+      if (key === 'state') next.district = '';
+      return next;
+    });
     setFieldErrors(e => ({ ...e, [key]: null }));
-    clearError();
+    setError(null);
   };
 
+  // MP dashboards are scoped by constituency, district dashboards by
+  // district — without these the role's dashboard has nothing to query.
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = 'Full name is required';
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errs.email = 'Valid email required';
-    if (form.password.length < 6) errs.password = 'Min 6 characters';
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(form.password)) {
+      errs.password = 'Min 8 characters, with uppercase, lowercase & a number';
+    }
     if (!form.role) errs.role = 'Select a role';
+    if (form.role === 'mp' && !form.constituency.trim()) errs.constituency = 'Constituency is required for an MP account';
+    if (form.role === 'district_nodal' && !form.state) errs.state = 'State is required for a District Authority account';
+    if (form.role === 'district_nodal' && !form.district) errs.district = 'District is required for a District Authority account';
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    setError(null);
 
-    // Simulate slight delay for realism
-    setTimeout(() => {
-      const result = register(form);
+    try {
+      const user = await adminApi.createUser(form);
+      toast.success(`${user.name} (${user.role}) can now log in with the password you set.`, 'Account Created');
+      setForm({ name: '', email: '', password: '', role: '', state: '', district: '', constituency: '' });
+    } catch (err) {
+      const message = err?.response?.data?.message || 'Could not create the account. Please try again.';
+      setError(message);
+      toast.error(message, 'Registration Failed');
+    } finally {
       setLoading(false);
-      if (result.success) {
-        toast.success('Account created successfully! Please login.', 'Account Created');
-        navigate('/login');
-      } else {
-        toast.error('An account with this email already exists.', 'Registration Failed');
-      }
-    }, 800);
+    }
   };
 
   return (
@@ -116,7 +130,7 @@ export default function Signup() {
                   value={form.password}
                   onChange={(e) => update('password', e.target.value)}
                   className="w-full pl-10 pr-11 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500 focus:ring-2 focus:ring-gov-blue-500/20 transition-all"
-                  placeholder="Min 6 characters"
+                  placeholder="Min 8 chars, upper, lower & a number"
                 />
                 <button
                   type="button"
@@ -152,6 +166,51 @@ export default function Signup() {
               </div>
               {fieldErrors.role && <p className="text-xs text-red-500 mt-1">{fieldErrors.role}</p>}
             </div>
+
+            {/* Constituency — required for MP accounts, drives the MP dashboard's data scope */}
+            {form.role === 'mp' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Constituency</label>
+                <input
+                  type="text"
+                  value={form.constituency}
+                  onChange={(e) => update('constituency', e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500 focus:ring-2 focus:ring-gov-blue-500/20 transition-all"
+                  placeholder="e.g. Varanasi"
+                />
+                {fieldErrors.constituency && <p className="text-xs text-red-500 mt-1">{fieldErrors.constituency}</p>}
+              </div>
+            )}
+
+            {/* State + District — required for District Authority accounts */}
+            {form.role === 'district_nodal' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">State</label>
+                  <select
+                    value={form.state}
+                    onChange={(e) => update('state', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500 focus:ring-2 focus:ring-gov-blue-500/20 bg-white appearance-none"
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {fieldErrors.state && <p className="text-xs text-red-500 mt-1">{fieldErrors.state}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">District</label>
+                  <select
+                    value={form.district}
+                    onChange={(e) => update('district', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500 focus:ring-2 focus:ring-gov-blue-500/20 bg-white appearance-none"
+                  >
+                    <option value="">Select District</option>
+                    {(DISTRICTS[form.state] || []).map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  {fieldErrors.district && <p className="text-xs text-red-500 mt-1">{fieldErrors.district}</p>}
+                </div>
+              </div>
+            )}
 
             {/* Error from AuthContext */}
             {error && (

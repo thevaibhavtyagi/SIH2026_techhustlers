@@ -1,8 +1,9 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
 import Topbar from '../components/common/Topbar';
+import CopilotButton from '../components/chatbot/CopilotButton';
 
-export default function CitizenLayout() {
+export default function DistrictLayout() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -12,6 +13,7 @@ export default function CitizenLayout() {
           <Outlet />
         </main>
       </div>
+      <CopilotButton />
     </div>
   );
 }

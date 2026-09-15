@@ -1,24 +1,37 @@
 // ========== Roles ==========
+// There is no public/citizen role — every account is admin-provisioned.
 export const ROLES = {
   ADMIN: 'admin',
   DISTRICT_NODAL: 'district_nodal',
   MP: 'mp',
-  CITIZEN: 'citizen',
 };
 
 export const ROLE_LABELS = {
   admin: 'MoSPI Admin',
   district_nodal: 'District Authority',
   mp: 'Member of Parliament',
-  citizen: 'Citizen',
 };
 
-// ========== Signup Role Options (for internal Signup page) ==========
+// ========== Signup Role Options (for internal, admin-only account setup) ==========
 export const SIGNUP_ROLES = [
   { value: 'admin', label: 'MoSPI Admin' },
   { value: 'district_nodal', label: 'District Authority' },
   { value: 'mp', label: 'MP' },
 ];
+
+// ========== Login Role Options ==========
+export const LOGIN_ROLES = [
+  { value: 'admin', label: 'MoSPI Admin' },
+  { value: 'district_nodal', label: 'District Authority' },
+  { value: 'mp', label: 'Member of Parliament' },
+];
+
+// ========== Where each role lands after login ==========
+export const ROLE_DASHBOARD_PATH = {
+  admin: '/admin/dashboard',
+  district_nodal: '/district/dashboard',
+  mp: '/mp/dashboard',
+};
 
 // ========== Indian States & UTs ==========
 export const INDIAN_STATES = [

@@ -4,8 +4,7 @@ const { hashPassword } = require('../utils/password');
 const { toPublicUser } = require('../utils/mapUser');
 const tokenService = require('./token.service');
 
-// Admin-only provisioning for government roles (mp / district_nodal / admin).
-// Citizens self-register through auth.service.register instead.
+// Admin-only provisioning — the only way any account (admin / district_nodal / mp) is created.
 const createProvisionedUser = async (payload) => {
   const existing = await userRepo.findByEmail(payload.email);
   if (existing) throw ApiError.conflict('An account with this email already exists');

@@ -6,12 +6,23 @@
 
 create extension if not exists pgcrypto;
 
+-- There is no public/citizen role — every account is admin-provisioned.
 do $$
 begin
   if not exists (select 1 from pg_type where typname = 'role') then
-    create type role as enum ('admin', 'district_nodal', 'mp', 'citizen');
+    create type role as enum ('admin', 'district_nodal', 'mp');
   end if;
 end$$;
+
+-- If this ran previously (when 'citizen' was still a role), the live enum
+-- may already contain it. That's harmless to leave in place — Postgres enums
+-- can't drop a value without recreating the type, and nothing in the app
+-- will ever write it. Uncomment below only if you want a fully clean enum
+-- and have confirmed no rows use role = 'citizen'.
+-- alter type role rename to role_old;
+-- create type role as enum ('admin', 'district_nodal', 'mp');
+-- alter table users alter column role type role using role::text::role;
+-- drop type role_old;
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),

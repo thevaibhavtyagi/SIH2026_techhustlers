@@ -4,7 +4,6 @@ const authenticate = require('../middleware/authenticate');
 const { authLimiter } = require('../middleware/rateLimiters');
 const authController = require('../controllers/auth.controller');
 const {
-  registerSchema,
   loginSchema,
   refreshSchema,
   forgotPasswordSchema,
@@ -14,7 +13,7 @@ const {
 
 const router = Router();
 
-router.post('/register', authLimiter, validate(registerSchema), authController.register);
+// No public registration — every account is provisioned by an admin via POST /api/users.
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', validate(refreshSchema), authController.refresh);
 router.post('/logout', authController.logout);

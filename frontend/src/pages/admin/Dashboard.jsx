@@ -9,17 +9,7 @@ import IndiaRiskMap from '../../components/maps/IndiaRiskMap';
 import { riskApi } from '../../services/api';
 import { formatNumber } from '../../utils/formatters';
 
-// REMAINING MOCK — no monthly time-series backend endpoint exists yet.
-// TODO Step 11: replace with GET /api/analytics/timeseries once implemented.
-const EXPENDITURE_TREND_MOCK = [
-  { month: 'Apr', sanctioned: 720, utilized: 480 }, { month: 'May', sanctioned: 740, utilized: 520 },
-  { month: 'Jun', sanctioned: 710, utilized: 550 }, { month: 'Jul', sanctioned: 680, utilized: 510 },
-  { month: 'Aug', sanctioned: 730, utilized: 560 }, { month: 'Sep', sanctioned: 750, utilized: 620 },
-  { month: 'Oct', sanctioned: 720, utilized: 580 }, { month: 'Nov', sanctioned: 700, utilized: 600 },
-  { month: 'Dec', sanctioned: 740, utilized: 630 }, { month: 'Jan', sanctioned: 760, utilized: 650 },
-  { month: 'Feb', sanctioned: 720, utilized: 640 }, { month: 'Mar', sanctioned: 672, utilized: 641 },
-];
-
+// Timeseries data will be populated by the API
 const RISK_COLORS = { LOW: '#22c55e', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#ef4444' };
 
 export default function AdminDashboard() {
@@ -27,6 +17,7 @@ export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
   const [topProjects, setTopProjects] = useState([]);
   const [recentFlags, setRecentFlags] = useState([]);
+  const [timeseries, setTimeseries] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -36,14 +27,16 @@ export default function AdminDashboard() {
       riskApi.getRiskSummary(),
       riskApi.getProjects({ limit: 10 }),
       riskApi.getInvestigations({ limit: 5 }),
+      riskApi.getAnalyticsTimeseries(),
     ])
-      .then(([ov, sm, projectsData, invData]) => {
+      .then(([ov, sm, projectsData, invData, tsData]) => {
         setOverview(ov);
         setSummary(sm);
         // Sort by riskScore descending to surface the highest-risk real projects
         const sorted = [...(projectsData?.projects || [])].sort((a, b) => b.riskScore - a.riskScore);
         setTopProjects(sorted.slice(0, 5));
         setRecentFlags(invData?.investigations || []);
+        setTimeseries(tsData || []);
       })
       .catch((err) => setError(err?.response?.data?.message || 'Could not reach the risk intelligence service.'));
   }, []);
@@ -158,20 +151,28 @@ export default function AdminDashboard() {
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Expenditure Trend — REMAINING MOCK (no time-series API yet) */}
+        {/* Monthly Project Activity */}
         <ChartCard
-          title="Expenditure Trend"
-          subtitle={<span>Monthly sanctioned vs utilized (₹ Cr) <span className="text-xs text-amber-500 font-medium ml-1">[illustrative]</span></span>}
+          title="Monthly Project Activity"
+          subtitle="Projects recommended, sanctioned, and completed by month"
         >
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={EXPENDITURE_TREND_MOCK}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
-              <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
-              <Bar dataKey="sanctioned" name="Sanctioned" fill="#2C5282" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="utilized" name="Utilized" fill="#22c55e" radius={[4, 4, 0, 0]} />
-            </BarChart>
+            {timeseries.length > 0 ? (
+              <BarChart data={timeseries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="recommendedProjects" name="Recommended" fill="#64748b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="sanctionedProjects" name="Sanctioned" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completedProjects" name="Completed" fill="#22c55e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                No activity data available.
+              </div>
+            )}
           </ResponsiveContainer>
         </ChartCard>
 

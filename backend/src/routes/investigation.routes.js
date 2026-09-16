@@ -10,7 +10,8 @@ const router = Router();
 router.use(authenticate, authorize(ROLES.ADMIN, ROLES.DISTRICT_NODAL, ROLES.MP));
 
 router.get('/', mlController.getInvestigations);
-// Specific route before the generic one so ".../report" doesn't get swallowed by :workId.
+// Specific routes before the generic one so they don't get swallowed by :workId
+router.get('/:workId(.*)/export', mlController.exportInvestigationReport);
 router.get('/:workId(.*)/report', mlController.getInvestigationReport);
 router.get('/:workId(.*)', mlController.getInvestigation);
 

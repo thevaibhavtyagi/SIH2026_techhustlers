@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 from typing import Optional
 
 from api.services.analytics_service import AnalyticsService
-from api.schemas.risk import AnalyticsOverviewResponse
+from api.schemas.risk import AnalyticsOverviewResponse, TimeseriesResponse
 
 
 router = APIRouter(
@@ -55,3 +55,16 @@ def get_constituencies(
 ):
 
     return analytics_service.get_constituencies(state, district, constituency)
+
+
+@router.get(
+    "/timeseries",
+    response_model=TimeseriesResponse
+)
+def get_timeseries(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
+    data = analytics_service.get_timeseries(state, district, constituency)
+    return TimeseriesResponse(data=data)

@@ -99,10 +99,13 @@ export const riskApi = {
   getInvestigation: (workId) => apiClient.get(`/investigations/${encodeURIComponent(workId)}`).then((r) => r.data.data),
   getInvestigationReport: (workId) =>
     apiClient.get(`/investigations/${encodeURIComponent(workId)}/report`).then((r) => r.data.data),
+  exportInvestigationReport: (workId) =>
+    apiClient.get(`/investigations/${encodeURIComponent(workId)}/export`, { responseType: 'blob' }).then((r) => r.data),
   getAnalyticsOverview: () => apiClient.get('/analytics/overview').then((r) => r.data.data),
   getAnalyticsStates: () => apiClient.get('/analytics/states').then((r) => r.data.data),
   getAnalyticsCategories: () => apiClient.get('/analytics/categories').then((r) => r.data.data),
   getAnalyticsConstituencies: () => apiClient.get('/analytics/constituencies').then((r) => r.data.data),
+  getAnalyticsTimeseries: () => apiClient.get('/analytics/timeseries').then((r) => r.data.data),
 };
 
 // ============================================================

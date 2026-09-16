@@ -104,7 +104,7 @@ export const COPILOT_SUGGESTIONS = [
   'Which state has the most high-risk projects?',
   "What's the overall completion rate?",
   'List the top 5 most critical flagged projects',
-  'What's the current risk level distribution?',
+  "What's the current risk level distribution?",
 ];
 
 export function mockCopilotResponse(query) {

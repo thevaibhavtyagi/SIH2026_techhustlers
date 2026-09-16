@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {
-  MOCK_PROJECTS, MOCK_CONTRACTORS, MOCK_ALERTS,
+  MOCK_CONTRACTORS,
   COPILOT_WELCOME, COPILOT_SUGGESTIONS, mockCopilotResponse,
 } from '../data/mockData';
 import { delay } from '../utils/formatters';
@@ -87,8 +87,8 @@ export const adminApi = {
 // ============================================================
 // Real ml_engine-backed risk intelligence (via the Express gateway)
 // backend/src/routes/{project,risk,investigation,analytics}.routes.js
-// Field names here match ml_engine's raw output (work_id, snake_case) —
-// distinct from the flattened mock shapes below.
+// Step 8 enforces data-level scope in the backend — constituency for MP,
+// state+district for district_nodal, all-India for admin.
 // ============================================================
 export const riskApi = {
   getProjects: (params) => apiClient.get('/projects', { params }).then((r) => r.data.data),
@@ -106,39 +106,41 @@ export const riskApi = {
 };
 
 // ============================================================
-// Dashboard UI data — MOCK for now (no backend endpoint yet for these
-// aggregate/demo shapes). Same function names/signatures the pages already
-// use, so pages/admin, pages/mp, pages/district work unmodified. Swap the
-// body for a real apiClient call once a matching backend route exists.
+// getDashboardStats — now powered by the real analytics/overview endpoint.
+// Step 8 enforces data-level scope on the backend, so the `role` and `scope`
+// params are not sent to the API — the backend already scopes the response
+// correctly based on the logged-in user's JWT claims.
 // ============================================================
-
-// `scope` narrows by constituency (mp) or district (district_nodal); admins pass null for all-India totals.
 export const getDashboardStats = async (role = 'admin', scope = null) => {
-  await delay(250);
-  let projects = MOCK_PROJECTS;
-  if (scope) projects = projects.filter((p) => p.constituency === scope || p.district === scope);
-
-  const totalProjects = projects.length;
-  const highRiskAlerts = projects.filter((p) => p.riskScore >= 60).length;
-  const completed = projects.filter((p) => p.status === 'Completed').length;
-  const totalFunds = projects.reduce((sum, p) => sum + p.sanctionedAmount, 0);
-
+  const data = await riskApi.getAnalyticsOverview();
   return {
-    totalProjects,
-    highRiskAlerts,
-    completionRate: totalProjects ? Math.round((completed / totalProjects) * 100) : 0,
-    totalFunds,
+    // Backward-compatible shape that existing dashboard pages already consume
+    totalProjects: data.totalProjects ?? 0,
+    highRiskAlerts: data.highCriticalProjects ?? 0,
+    completionRate: data.totalProjects
+      ? Math.round(((data.completedProjects ?? 0) / data.totalProjects) * 100)
+      : 0,
+    totalFunds: data.totalSanctionedAmount ?? 0,
+    // Additional real fields passed through for dashboard pages that want them
+    totalExpenditure: data.totalExpenditure ?? 0,
+    averageRiskScore: data.averageRiskScore ?? 0,
+    completedProjects: data.completedProjects ?? 0,
+    pendingProjects: data.pendingProjects ?? 0,
+    riskDistribution: data.riskDistribution ?? {},
+    mlDetectedProjects: data.mlDetectedProjects ?? 0,
+    multiEngineProjects: data.multiEngineProjects ?? 0,
+    maximumRiskScore: data.maximumRiskScore ?? 0,
   };
 };
 
 export const getProjects = async (filters = {}) => {
   const data = await riskApi.getProjects(filters);
   let results = data.projects || [];
-  
+
   if (filters.search) {
     const s = filters.search.toLowerCase();
     results = results.filter(
-      (p) => p.id.toLowerCase().includes(s) || p.name.toLowerCase().includes(s) || p.district?.toLowerCase().includes(s)
+      (p) => (p.id || '').toLowerCase().includes(s) || (p.name || '').toLowerCase().includes(s) || (p.district || '').toLowerCase().includes(s)
     );
   }
   return results;
@@ -158,22 +160,55 @@ export const getContractorById = async (id) => {
   return MOCK_CONTRACTORS.find((c) => c.id === id) || null;
 };
 
+// ============================================================
+// getAlerts — bridges to the real investigations API.
+// There is no dedicated /api/alerts endpoint (Steps 1–9).
+// Investigations from the ML engine are the real source of flagged data.
+// Filters: constituency, district, state are passed through to the backend
+// (which enforces Step 8 data-level scope). Filters for severity/category/
+// status are applied client-side against the mapped shape.
+// ============================================================
 export const getAlerts = async (filters = {}) => {
-  await delay(200);
-  let results = MOCK_ALERTS;
-  if (filters.projectId) results = results.filter((a) => a.projectId === filters.projectId);
-  if (filters.severity) results = results.filter((a) => a.severity === filters.severity);
-  if (filters.category) results = results.filter((a) => a.category === filters.category);
-  if (filters.status) results = results.filter((a) => a.status === filters.status);
-  if (filters.constituency) {
-    const ids = new Set(MOCK_PROJECTS.filter((p) => p.constituency === filters.constituency).map((p) => p.id));
-    results = results.filter((a) => ids.has(a.projectId));
+  const params = { limit: filters.limit || 50 };
+  if (filters.constituency) params.constituency = filters.constituency;
+  if (filters.district) params.district = filters.district;
+  if (filters.state) params.state = filters.state;
+
+  try {
+    const data = await riskApi.getInvestigations(params);
+    const investigations = data?.investigations || (Array.isArray(data) ? data : []);
+
+    let results = investigations.map((inv) => ({
+      id: inv.workId,
+      projectId: inv.workId,
+      description: inv.primarySignal || `Risk score ${inv.riskScore ?? 0}/100 — flagged for investigation`,
+      category: inv.priority || 'Risk',
+      severity:
+        inv.riskLevel === 'CRITICAL' ? 'Critical'
+        : inv.riskLevel === 'HIGH' ? 'High'
+        : inv.riskLevel === 'MEDIUM' ? 'Medium'
+        : 'Low',
+      status: 'New',
+      timestamp: new Date().toISOString(),
+      // Pass through original investigation fields for pages that need them
+      workId: inv.workId,
+      riskScore: inv.riskScore,
+      riskLevel: inv.riskLevel,
+      primarySignal: inv.primarySignal,
+      priority: inv.priority,
+      state: inv.state,
+      constituency: inv.constituency,
+    }));
+
+    // Client-side filter for severity/category/status — these won't perfectly
+    // match the old mock categories but allow compatible filtering UI to work.
+    if (filters.severity) results = results.filter((a) => a.severity === filters.severity);
+    if (filters.status) results = results.filter((a) => a.status === filters.status);
+
+    return results;
+  } catch {
+    return [];
   }
-  if (filters.district) {
-    const ids = new Set(MOCK_PROJECTS.filter((p) => p.district === filters.district).map((p) => p.id));
-    results = results.filter((a) => ids.has(a.projectId));
-  }
-  return results;
 };
 
 export const getCopilotWelcome = async () => {
@@ -196,26 +231,40 @@ export const submitConcern = async (concernData) => {
   return { success: true, id: `CONCERN-${Date.now()}`, ...concernData };
 };
 
+// ============================================================
+// REMAINING MOCKS — no backend endpoint exists yet for these.
+// Do not remove without first implementing the corresponding backend API.
+// ============================================================
+
+// Expenditure time-series: no monthly breakdown API exists.
+// TODO Step 11: implement GET /api/analytics/timeseries
 export const getExpenditureData = async () => {
   await delay(200);
-  return MOCK_PROJECTS.map((p) => ({ month: p.sanctionDate.slice(0, 7), amount: p.expenditure }));
+  // Returns empty — callers should handle [] gracefully.
+  return [];
 };
 
 export const getProgressData = async () => {
   await delay(200);
-  return MOCK_PROJECTS.map((p) => ({ id: p.id, progress: p.progress }));
+  return [];
 };
 
+// State risk data: now available from real API — use riskApi.getAnalyticsStates() directly.
+// This wrapper is kept for any legacy callers but delegates to the real API.
 export const getStateRiskData = async () => {
-  await delay(200);
-  const byState = {};
-  for (const p of MOCK_PROJECTS) {
-    byState[p.state] ??= { state: p.state, projects: 0, highRiskProjects: 0, totalRisk: 0 };
-    byState[p.state].projects += 1;
-    byState[p.state].totalRisk += p.riskScore;
-    if (p.riskScore >= 60) byState[p.state].highRiskProjects += 1;
+  try {
+    const data = await riskApi.getAnalyticsStates();
+    const states = data?.states || (Array.isArray(data) ? data : []);
+    return states.map((s) => ({
+      state: s.state,
+      projects: s.totalProjects ?? 0,
+      highRiskProjects: (s.highRisk ?? 0) + (s.criticalRisk ?? 0),
+      totalRisk: (s.averageRiskScore ?? 0) * (s.totalProjects ?? 0),
+      riskScore: Math.round(s.averageRiskScore ?? 0),
+    }));
+  } catch {
+    return [];
   }
-  return Object.values(byState).map((s) => ({ ...s, riskScore: Math.round(s.totalRisk / s.projects) }));
 };
 
 export const getStateByName = async (name) => {

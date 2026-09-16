@@ -14,6 +14,8 @@ const FILTERS = [
 
 // Reused for "My Projects" / "Progress" (MP, scoped by constituency) and
 // "District Projects" (District Authority, scoped by district).
+// Step 8 backend enforces data-level scope — the frontend simply displays
+// whatever the backend returns for the authenticated user.
 export default function ScopedProjects({ scopeField, title, subtitle }) {
   const { user } = useAuth();
   const scopeValue = user?.[scopeField];
@@ -21,6 +23,7 @@ export default function ScopedProjects({ scopeField, title, subtitle }) {
   const [loading, setLoading] = useState(true);
   const [filterValues, setFilterValues] = useState({});
   const [search, setSearch] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!scopeValue) {
@@ -28,11 +31,17 @@ export default function ScopedProjects({ scopeField, title, subtitle }) {
       return;
     }
     setLoading(true);
+    setError(null);
     const debounce = setTimeout(() => {
-      getProjects({ [scopeField]: scopeValue, ...filterValues, search }).then((data) => {
-        setProjects(data);
-        setLoading(false);
-      });
+      getProjects({ [scopeField]: scopeValue, ...filterValues, search })
+        .then((data) => {
+          setProjects(data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setError(err?.response?.data?.message || 'Could not load projects.');
+          setLoading(false);
+        });
     }, 250);
     return () => clearTimeout(debounce);
   }, [scopeField, scopeValue, filterValues, search]);
@@ -42,26 +51,28 @@ export default function ScopedProjects({ scopeField, title, subtitle }) {
     { key: 'name', label: 'Project Details', sortable: true, width: '30%', render: (v, row) => (
       <div>
         <p className="font-medium text-slate-800 truncate" title={v}>{v}</p>
-        <p className="text-xs text-slate-500">{row.workType}</p>
+        <p className="text-xs text-slate-500">{row.workType || '—'}</p>
       </div>
     ) },
     { key: 'sanctionedAmount', label: 'Funds (₹)', sortable: true, render: (v) => formatCurrency(v) },
     { key: 'progress', label: 'Progress', sortable: true, render: (v) => (
       <div className="flex items-center gap-2">
         <div className="flex-1 h-1.5 w-16 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gov-blue-500 rounded-full" style={{ width: `${v}%` }} />
+          <div className="h-full bg-gov-blue-500 rounded-full" style={{ width: `${v ?? 0}%` }} />
         </div>
-        <span className="text-xs font-medium text-slate-600">{v}%</span>
+        <span className="text-xs font-medium text-slate-600">{v ?? 0}%</span>
       </div>
     ) },
     { key: 'status', label: 'Status', sortable: true, render: (v) => <StatusBadge status={v} /> },
-    { key: 'riskScore', label: 'Risk', sortable: true, render: (v) => <RiskBadge score={v} /> },
+    { key: 'riskScore', label: 'Risk', sortable: true, render: (v) => <RiskBadge score={v ?? 0} /> },
     { key: 'sanctionDate', label: 'Sanctioned', sortable: true, render: (v) => formatDate(v) },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title={title} subtitle={subtitle} />
+
+      {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg border border-red-200">{error}</div>}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible z-10 relative">
         <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">

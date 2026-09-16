@@ -34,15 +34,21 @@ export default function AdminDashboard() {
     Promise.all([
       riskApi.getAnalyticsOverview(),
       riskApi.getRiskSummary(),
-      riskApi.getProjects({ limit: 10 }),
+      // riskLevel: CRITICAL first — the backend has no "sort by risk" param, so
+      // fetching an unfiltered page and sorting it client-side would just surface
+      // whatever happens to be first in the CSV, not the actual highest-risk projects.
+      riskApi.getProjects({ riskLevel: 'CRITICAL', limit: 5 }),
       riskApi.getInvestigations({ limit: 5 }),
     ])
-      .then(([ov, sm, projectsData, invData]) => {
+      .then(async ([ov, sm, criticalData, invData]) => {
         setOverview(ov);
         setSummary(sm);
-        // Sort by riskScore descending to surface the highest-risk real projects
-        const sorted = [...(projectsData?.projects || [])].sort((a, b) => b.riskScore - a.riskScore);
-        setTopProjects(sorted.slice(0, 5));
+        let top = criticalData?.projects || [];
+        if (top.length < 5) {
+          const highData = await riskApi.getProjects({ riskLevel: 'HIGH', limit: 5 - top.length });
+          top = [...top, ...(highData?.projects || [])];
+        }
+        setTopProjects(top);
         setRecentFlags(invData?.investigations || []);
       })
       .catch((err) => setError(err?.response?.data?.message || 'Could not reach the risk intelligence service.'));

@@ -1,0 +1,11 @@
+# Minimal deps for the deployed FastAPI service (ml_engine/api/) only.
+# requirements.txt is a full local dev/notebook environment dump (Jupyter,
+# matplotlib, seaborn, pywinpty, etc.) — pywinpty is Windows-only and fails
+# to build on Render's Linux hosts. The live API only reads CSVs with pandas
+# and serves them via FastAPI; it doesn't import sklearn, matplotlib, or
+# anything notebook-related at request time.
+fastapi==0.141.1
+uvicorn==0.52.4
+pandas==3.0.5
+pydantic==2.13.5
+python-dateutil==2.9.0.post0

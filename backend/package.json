@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/scripts/seedAdmin.js"
+    "seed": "node src/scripts/seedAdmin.js",
+    "ingest-data": "node src/scripts/ingestProjectData.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

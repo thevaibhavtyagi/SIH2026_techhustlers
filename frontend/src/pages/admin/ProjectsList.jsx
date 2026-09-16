@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Plus, Search, Filter } from 'lucide-react';
+import { Download, Plus, Search, Filter, Loader2 } from 'lucide-react';
 import DataTable from '../../components/common/DataTable';
 import RiskBadge, { StatusBadge } from '../../components/common/RiskBadge';
-import { PageHeader, FilterBar } from '../../components/common/UIComponents';
-import { getProjects } from '../../services/api';
+import { PageHeader, FilterBar, Modal } from '../../components/common/UIComponents';
+import { getProjects, createProject, exportProjectsCsv } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { INDIAN_STATES } from '../../utils/constants';
+
+const EMPTY_FORM = { state: '', district: '', constituency: '', workCategory: '', workDescription: '', sanctionAmount: '', workStatus: 'Sanctioned' };
 
 const FILTERS = [
   { key: 'state', label: 'All States', options: INDIAN_STATES },
@@ -19,19 +21,43 @@ export default function ProjectsList() {
   const [loading, setLoading] = useState(true);
   const [filterValues, setFilterValues] = useState({});
   const [search, setSearch] = useState('');
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState(null);
   const navigate = useNavigate();
 
+  const fetchProjects = async () => {
+    setLoading(true);
+    const data = await getProjects({ ...filterValues, search });
+    setProjects(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchProjects = async () => {
-      setLoading(true);
-      const data = await getProjects({ ...filterValues, search });
-      setProjects(data);
-      setLoading(false);
-    };
-    
     const debounceTimer = setTimeout(fetchProjects, 300);
     return () => clearTimeout(debounceTimer);
   }, [filterValues, search]);
+
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    if (!form.state || !form.constituency || !form.workDescription) {
+      setFormError('State, constituency, and work description are required.');
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
+    try {
+      await createProject(form);
+      setShowNewProject(false);
+      setForm(EMPTY_FORM);
+      await fetchProjects();
+    } catch (err) {
+      setFormError(err?.response?.data?.message || 'Could not create project.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const columns = [
     { key: 'id', label: 'Project ID', sortable: true, render: (val) => <span className="font-mono text-xs">{val}</span> },
@@ -61,10 +87,17 @@ export default function ProjectsList() {
         title="Project Directory" 
         subtitle="Comprehensive view of all MPLADS projects across constituencies."
       >
-        <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm">
+        <button
+          onClick={() => exportProjectsCsv(projects)}
+          disabled={projects.length === 0}
+          className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+        >
           <Download className="w-4 h-4" /> Export CSV
         </button>
-        <button className="flex items-center gap-2 px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-medium hover:bg-navy-900 transition-colors shadow-sm">
+        <button
+          onClick={() => setShowNewProject(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-medium hover:bg-navy-900 transition-colors shadow-sm"
+        >
           <Plus className="w-4 h-4" /> New Project
         </button>
       </PageHeader>
@@ -102,6 +135,51 @@ export default function ProjectsList() {
           className="border-0 shadow-none rounded-t-none"
         />
       </div>
+
+      <Modal isOpen={showNewProject} onClose={() => { setShowNewProject(false); setFormError(null); }} title="New Project" maxWidth="max-w-lg">
+        <form onSubmit={handleCreateProject} className="space-y-4">
+          <p className="text-xs text-slate-500 -mt-2">
+            Manually-added projects have no AI risk score until the next ML pipeline run picks them up from the official MPLADS dataset.
+          </p>
+          {formError && <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-200">{formError}</div>}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">State *</label>
+              <input required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">District</label>
+              <input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">Constituency *</label>
+            <input required value={form.constituency} onChange={(e) => setForm({ ...form, constituency: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">Work Description *</label>
+            <textarea required rows={3} value={form.workDescription} onChange={(e) => setForm({ ...form, workDescription: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">Work Category</label>
+              <input value={form.workCategory} onChange={(e) => setForm({ ...form, workCategory: e.target.value })} placeholder="Normal/Others" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">Sanctioned Amount (₹)</label>
+              <input type="number" min="0" value={form.sanctionAmount} onChange={(e) => setForm({ ...form, sanctionAmount: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-gov-blue-500" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={() => { setShowNewProject(false); setFormError(null); }} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-medium hover:bg-navy-900 disabled:opacity-60 transition-colors">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />} Create Project
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

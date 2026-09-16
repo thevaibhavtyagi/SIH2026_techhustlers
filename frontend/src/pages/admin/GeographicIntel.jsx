@@ -41,7 +41,7 @@ export default function GeographicIntel() {
     );
   }
 
-  const sortedByRisk = [...states].sort((a, b) => b.average_risk_score - a.average_risk_score);
+  const sortedByRisk = [...states].sort((a, b) => b.averageRiskScore - a.averageRiskScore);
   const top15 = sortedByRisk.slice(0, 15);
 
   return (
@@ -56,10 +56,10 @@ export default function GeographicIntel() {
             <YAxis dataKey="state" type="category" axisLine={false} tickLine={false} width={140} tick={{ fontSize: 11, fill: '#334155' }} />
             <Tooltip
               contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-              formatter={(value, name) => [value, name === 'average_risk_score' ? 'Avg Risk Score' : name]}
+              formatter={(value, name) => [value, name === 'averageRiskScore' ? 'Avg Risk Score' : name]}
             />
-            <Bar dataKey="average_risk_score" radius={[0, 4, 4, 0]} barSize={18}>
-              {top15.map((s, i) => <Cell key={i} fill={riskFill(s.average_risk_score)} />)}
+            <Bar dataKey="averageRiskScore" radius={[0, 4, 4, 0]} barSize={18}>
+              {top15.map((s, i) => <Cell key={i} fill={riskFill(s.averageRiskScore)} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -83,14 +83,14 @@ export default function GeographicIntel() {
                   <td className="py-2.5 pr-4 font-medium text-slate-800 flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" /> {s.state}
                   </td>
-                  <td className="py-2.5 pr-4 text-slate-600">{formatNumber(s.total_projects)}</td>
+                  <td className="py-2.5 pr-4 text-slate-600">{formatNumber(s.totalProjects)}</td>
                   <td className="py-2.5 pr-4">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getRiskColor(s.average_risk_score)}`}>
-                      {s.average_risk_score}
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getRiskColor(s.averageRiskScore)}`}>
+                      {s.averageRiskScore}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-4 text-orange-600 font-medium">{s.high_risk}</td>
-                  <td className="py-2.5 pr-4 text-red-600 font-medium">{s.critical_risk}</td>
+                  <td className="py-2.5 pr-4 text-orange-600 font-medium">{s.highRisk}</td>
+                  <td className="py-2.5 pr-4 text-red-600 font-medium">{s.criticalRisk}</td>
                 </tr>
               ))}
             </tbody>

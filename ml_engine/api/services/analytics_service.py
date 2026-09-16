@@ -38,11 +38,11 @@ class AnalyticsService:
     def _filter_data(self, state: str = None, district: str = None, constituency: str = None):
         df = self.data.copy()
         if state:
-            df = df[df["state"].astype(str).str.lower() == state.lower()]
+            df = df[df["state"].astype(str).str.contains(state, case=False, na=False)]
         if district:
-            df = df[df["ida"].astype(str).str.lower() == district.lower()]
+            df = df[df["ida"].astype(str).str.contains(district, case=False, na=False)]
         if constituency:
-            df = df[df["constituency"].astype(str).str.lower() == constituency.lower()]
+            df = df[df["constituency"].astype(str).str.contains(constituency, case=False, na=False)]
         return df
 
     def get_overview(self, state: str = None, district: str = None, constituency: str = None):

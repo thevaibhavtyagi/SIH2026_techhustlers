@@ -44,8 +44,8 @@ async function runTests() {
     email: districtEmail,
     password: 'Password@123',
     role: 'district_nodal',
-    state: 'StateX',
-    district: 'DistrictY'
+    state: 'Kerala',
+    district: 'Ernakulam'
   });
   console.log('Admin create District (Valid):', createDistRes.status, createDistRes.data.success ? 'SUCCESS' : createDistRes.data.message);
   const distId = createDistRes.data.data?.user?.id;

@@ -5,11 +5,18 @@ import { PageHeader, ChartCard, LoadingState } from '../../components/common/UIC
 import { riskApi } from '../../services/api';
 import { formatNumber, getRiskColor } from '../../utils/formatters';
 
-const riskFill = (score) => {
-  if (score >= 75) return '#ef4444';
-  if (score >= 60) return '#f97316';
-  if (score >= 40) return '#f59e0b';
+const riskFill = (level) => {
+  if (level === 'Critical') return '#ef4444';
+  if (level === 'High') return '#f97316';
+  if (level === 'Moderate') return '#f59e0b';
   return '#22c55e';
+};
+
+const getDerivedStateRisk = (sd) => {
+  if ((sd.criticalRisk ?? 0) > 0) return 'Critical';
+  if ((sd.highRisk ?? 0) > 0) return 'High';
+  if ((sd.averageRiskScore ?? 0) >= 40) return 'Moderate';
+  return 'Low';
 };
 
 export default function GeographicIntel() {
@@ -59,7 +66,7 @@ export default function GeographicIntel() {
               formatter={(value, name) => [value, name === 'averageRiskScore' ? 'Avg Risk Score' : name]}
             />
             <Bar dataKey="averageRiskScore" radius={[0, 4, 4, 0]} barSize={18}>
-              {top15.map((s, i) => <Cell key={i} fill={riskFill(s.averageRiskScore)} />)}
+              {top15.map((s, i) => <Cell key={i} fill={riskFill(getDerivedStateRisk(s))} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -85,7 +92,12 @@ export default function GeographicIntel() {
                   </td>
                   <td className="py-2.5 pr-4 text-slate-600">{formatNumber(s.totalProjects)}</td>
                   <td className="py-2.5 pr-4">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getRiskColor(s.averageRiskScore)}`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                      getDerivedStateRisk(s) === 'Critical' ? 'text-red-700 bg-red-100 border-red-300' :
+                      getDerivedStateRisk(s) === 'High' ? 'text-orange-700 bg-orange-100 border-orange-300' :
+                      getDerivedStateRisk(s) === 'Moderate' ? 'text-amber-700 bg-amber-100 border-amber-300' :
+                      'text-green-700 bg-green-100 border-green-300'
+                    }`}>
                       {s.averageRiskScore}
                     </span>
                   </td>

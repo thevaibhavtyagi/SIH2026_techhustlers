@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ml-engine",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\Lenovo\\OneDrive\\Documents\\GitHub\\SIH2026_techhustlers\\ml_engine && .venv\\Scripts\\python.exe -m uvicorn api.main:app --port 8000"],
+      "port": 8000
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\Lenovo\\OneDrive\\Documents\\GitHub\\SIH2026_techhustlers\\backend && npm run dev"],
+      "port": 5000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\Lenovo\\OneDrive\\Documents\\GitHub\\SIH2026_techhustlers\\frontend && npm run dev"],
+      "port": 5173
+    }
+  ]
+}

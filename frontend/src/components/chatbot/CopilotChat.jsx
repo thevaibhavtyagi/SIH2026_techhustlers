@@ -199,7 +199,7 @@ export default function CopilotChat({ onClose }) {
             <Send className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[10px] text-slate-400 mt-2 text-center">Prototype • Responses generated from synthetic demo data</p>
+        <p className="text-[10px] text-slate-400 mt-2 text-center">AI-generated from live MPLADS risk data — verify before acting on any flagged item</p>
       </div>
     </div>
   );

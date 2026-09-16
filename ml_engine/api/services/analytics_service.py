@@ -410,3 +410,54 @@ class AnalyticsService:
                 orient="records"
             )
         }
+
+    def get_timeseries(self, state: str = None, district: str = None, constituency: str = None):
+        df = self._filter_data(state, district, constituency)
+        
+        # Parse dates safely
+        rec_dates = pd.to_datetime(df["recommended_date"], errors="coerce").dropna()
+        sanc_dates = pd.to_datetime(df["sanction_date"], errors="coerce").dropna()
+        comp_dates = pd.to_datetime(df["completion_date"], errors="coerce").dropna()
+        
+        # Convert to month period strings (YYYY-MM)
+        rec_months = rec_dates.dt.to_period("M").astype(str)
+        sanc_months = sanc_dates.dt.to_period("M").astype(str)
+        comp_months = comp_dates.dt.to_period("M").astype(str)
+        
+        # Aggregate counts per month
+        rec_counts = rec_months.value_counts().rename("recommended_projects")
+        sanc_counts = sanc_months.value_counts().rename("sanctioned_projects")
+        comp_counts = comp_months.value_counts().rename("completed_projects")
+        
+        # Merge all aggregates
+        merged = pd.concat([rec_counts, sanc_counts, comp_counts], axis=1).fillna(0).astype(int)
+        
+        # Ensure we have continuous months between min and max date
+        if not merged.empty:
+            min_date = min(
+                rec_dates.min() if not rec_dates.empty else pd.Timestamp.max,
+                sanc_dates.min() if not sanc_dates.empty else pd.Timestamp.max,
+                comp_dates.min() if not comp_dates.empty else pd.Timestamp.max
+            )
+            max_date = max(
+                rec_dates.max() if not rec_dates.empty else pd.Timestamp.min,
+                sanc_dates.max() if not sanc_dates.empty else pd.Timestamp.min,
+                comp_dates.max() if not comp_dates.empty else pd.Timestamp.min
+            )
+            
+            if pd.notna(min_date) and pd.notna(max_date) and min_date <= max_date:
+                all_months = pd.period_range(min_date, max_date, freq="M").astype(str)
+                merged = merged.reindex(all_months, fill_value=0)
+        
+        # Convert to list of dicts and sort chronologically
+        merged = merged.sort_index()
+        result = []
+        for month_str, row in merged.iterrows():
+            result.append({
+                "month": str(month_str),
+                "recommended_projects": int(row["recommended_projects"]),
+                "sanctioned_projects": int(row["sanctioned_projects"]),
+                "completed_projects": int(row["completed_projects"])
+            })
+            
+        return result

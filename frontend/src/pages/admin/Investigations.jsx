@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, FileText, Loader2 } from 'lucide-react';
+import { Search, Filter, FileText, Loader2, Download } from 'lucide-react';
 import DataTable from '../../components/common/DataTable';
 import RiskBadge from '../../components/common/RiskBadge';
 import { PageHeader, FilterBar, Drawer } from '../../components/common/UIComponents';
@@ -19,6 +19,7 @@ export default function Investigations() {
   const [selected, setSelected] = useState(null);
   const [report, setReport] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -57,6 +58,31 @@ export default function Investigations() {
       setReport({ error: true });
     } finally {
       setReportLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!selected) return;
+    setDownloading(true);
+    try {
+      const data = await riskApi.exportInvestigationReport(selected.workId);
+      
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const safeWorkId = selected.workId.replace(/\//g, '_');
+      link.download = `investigation-report-${safeWorkId}.pdf`;
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to export PDF.');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -138,9 +164,19 @@ export default function Investigations() {
               </div>
             </div>
             <div>
-              <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-2">
-                <FileText className="w-4 h-4" /> AI-Grounded Investigation Report
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                  <FileText className="w-4 h-4" /> AI-Grounded Investigation Report
+                </h4>
+                <button
+                  onClick={handleExport}
+                  disabled={downloading}
+                  className="flex items-center gap-1.5 text-xs font-medium bg-navy-50 text-navy-700 hover:bg-navy-100 px-3 py-1.5 rounded-lg border border-navy-200 transition-colors disabled:opacity-50"
+                >
+                  {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  Export PDF
+                </button>
+              </div>
               <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
                 {report.report || 'No narrative report has been generated for this work yet.'}
               </div>

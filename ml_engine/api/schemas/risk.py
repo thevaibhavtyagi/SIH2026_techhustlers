@@ -40,3 +40,15 @@ class AnalyticsOverviewResponse(BaseModel):
     high_critical_projects: int
     ml_detected_projects: int
     multi_engine_projects: int
+
+
+class TimeseriesDataPoint(BaseModel):
+    month: str
+    recommended_projects: int
+    sanctioned_projects: int
+    completed_projects: int
+
+
+class TimeseriesResponse(BaseModel):
+    success: bool = True
+    data: List[TimeseriesDataPoint]

@@ -10,5 +10,6 @@ router.get('/overview', mlController.getAnalyticsOverview);
 router.get('/states', mlController.getAnalyticsStates);
 router.get('/categories', mlController.getAnalyticsCategories);
 router.get('/constituencies', mlController.getAnalyticsConstituencies);
+router.get('/timeseries', mlController.getAnalyticsTimeseries);
 
 module.exports = router;

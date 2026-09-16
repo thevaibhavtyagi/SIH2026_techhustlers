@@ -2,6 +2,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const mlService = require('../services/ml.service');
 const projectRepo = require('../repositories/project.repository');
 const ApiError = require('../utils/ApiError');
+const pdfService = require('../services/pdf.service');
 
 const getProjects = asyncHandler(async (req, res) => {
   const { limit, offset, risk_level: riskLevel, state, district, constituency, status } = req.query;
@@ -72,6 +73,15 @@ const getInvestigationReport = asyncHandler(async (req, res) => {
   res.json({ success: true, data });
 });
 
+const exportInvestigationReport = asyncHandler(async (req, res) => {
+  const data = await mlService.getInvestigationReport(req.user, req.params.workId);
+  const pdfBuffer = await pdfService.generateInvestigationReport(data);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="investigation-${encodeURIComponent(req.params.workId)}.pdf"`);
+  res.send(pdfBuffer);
+});
+
 const getAnalyticsOverview = asyncHandler(async (req, res) => {
   const data = await mlService.getAnalyticsOverview(req.user);
   res.json({ success: true, data });
@@ -92,6 +102,11 @@ const getAnalyticsConstituencies = asyncHandler(async (req, res) => {
   res.json({ success: true, data });
 });
 
+const getAnalyticsTimeseries = asyncHandler(async (req, res) => {
+  const data = await mlService.getAnalyticsTimeseries(req.user);
+  res.json({ success: true, data });
+});
+
 module.exports = {
   getProjects,
   getProject,
@@ -101,8 +116,10 @@ module.exports = {
   getInvestigations,
   getInvestigation,
   getInvestigationReport,
+  exportInvestigationReport,
   getAnalyticsOverview,
   getAnalyticsStates,
   getAnalyticsCategories,
   getAnalyticsConstituencies,
+  getAnalyticsTimeseries,
 };

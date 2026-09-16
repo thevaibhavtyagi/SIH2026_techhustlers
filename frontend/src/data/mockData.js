@@ -101,10 +101,10 @@ export const MOCK_ALERTS = MOCK_PROJECTS.filter((p) => p.riskScore >= 55)
 export const COPILOT_WELCOME = "Hi, I'm Drishti Copilot. Ask me about projects, risk scores, or delays in plain English.";
 
 export const COPILOT_SUGGESTIONS = [
-  'Show me high-risk projects in Uttar Pradesh',
-  "What's the average completion rate this quarter?",
-  'Which contractors have the highest delay rate?',
-  'Summarize this week’s critical alerts',
+  'Which state has the most high-risk projects?',
+  "What's the overall completion rate?",
+  'List the top 5 most critical flagged projects',
+  'What's the current risk level distribution?',
 ];
 
 export function mockCopilotResponse(query) {

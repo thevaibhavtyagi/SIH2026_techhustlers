@@ -13,16 +13,26 @@ const scopeLabel = (user) => {
 // used by the dashboard/alerts/investigations endpoints) so the Copilot never
 // sees data the requesting user isn't authorized to see in the first place.
 const buildContext = async (user) => {
-  const [overview, riskSummary, investigationsData] = await Promise.all([
+  const [overview, riskSummary, investigationsData, statesData] = await Promise.all([
     mlService.getAnalyticsOverview(user),
     mlService.getRiskSummary(user),
     mlService.getInvestigations(user, { limit: 10 }),
+    mlService.getAnalyticsStates(user).catch(() => null),
   ]);
 
   const investigations = investigationsData?.investigations || [];
+  const states = statesData?.states || (Array.isArray(statesData) ? statesData : []);
 
   return {
     scope: scopeLabel(user),
+    // Per-state breakdown so questions like "high-risk projects in <state>" are answerable.
+    byState: states.slice(0, 40).map((s) => ({
+      state: s.state,
+      totalProjects: s.totalProjects,
+      highRisk: s.highRisk,
+      criticalRisk: s.criticalRisk,
+      averageRiskScore: s.averageRiskScore,
+    })),
     projectTotals: {
       totalProjects: overview?.totalProjects ?? 0,
       totalSanctionedAmount: overview?.totalSanctionedAmount ?? 0,

@@ -43,7 +43,7 @@ export default function Investigations() {
   }, [filterValues]);
 
   const filtered = search
-    ? investigations.filter((i) => i.work_id.toLowerCase().includes(search.toLowerCase()) || i.constituency?.toLowerCase().includes(search.toLowerCase()))
+    ? investigations.filter((i) => i.workId.toLowerCase().includes(search.toLowerCase()) || i.constituency?.toLowerCase().includes(search.toLowerCase()))
     : investigations;
 
   const openReport = async (row) => {
@@ -51,7 +51,7 @@ export default function Investigations() {
     setReport(null);
     setReportLoading(true);
     try {
-      const data = await riskApi.getInvestigationReport(row.work_id);
+      const data = await riskApi.getInvestigationReport(row.workId);
       setReport(data);
     } catch {
       setReport({ error: true });
@@ -61,12 +61,12 @@ export default function Investigations() {
   };
 
   const columns = [
-    { key: 'investigation_rank', label: 'Rank', sortable: true, render: (v) => <span className="font-mono text-xs">#{v}</span> },
-    { key: 'work_id', label: 'Work ID', sortable: true, render: (v) => <span className="font-mono text-xs">{v}</span> },
+    { key: 'rank', label: 'Rank', sortable: true, render: (v) => <span className="font-mono text-xs">#{v}</span> },
+    { key: 'workId', label: 'Work ID', sortable: true, render: (v) => <span className="font-mono text-xs">{v}</span> },
     { key: 'constituency', label: 'Location', sortable: true, render: (v, row) => <span>{v || '—'}, {row.state}</span> },
-    { key: 'final_ai_risk_score', label: 'Risk Score', sortable: true, render: (v, row) => <RiskBadge score={Math.round(v ?? 0)} /> },
-    { key: 'investigation_priority_category', label: 'Priority', sortable: true },
-    { key: 'primary_risk_source', label: 'Primary Signal', render: (v) => <span className="text-xs text-slate-600">{v || '—'}</span> },
+    { key: 'riskScore', label: 'Risk Score', sortable: true, render: (v, row) => <RiskBadge score={Math.round(v ?? 0)} /> },
+    { key: 'priority', label: 'Priority', sortable: true },
+    { key: 'primarySignal', label: 'Primary Signal', render: (v) => <span className="text-xs text-slate-600">{v || '—'}</span> },
   ];
 
   return (
@@ -108,7 +108,7 @@ export default function Investigations() {
         />
       </div>
 
-      <Drawer isOpen={!!selected} onClose={() => setSelected(null)} title={selected ? `Investigation Report — ${selected.work_id}` : ''}>
+      <Drawer isOpen={!!selected} onClose={() => setSelected(null)} title={selected ? `Investigation Report — ${selected.workId}` : ''}>
         {reportLoading && (
           <div className="flex items-center justify-center py-16 text-slate-400">
             <Loader2 className="w-6 h-6 animate-spin" />
@@ -122,11 +122,11 @@ export default function Investigations() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Risk Score</p>
-                <p className="font-semibold text-slate-800">{report.final_ai_risk_score ?? '—'} ({report.final_ai_risk_level ?? '—'})</p>
+                <p className="font-semibold text-slate-800">{report.riskScore ?? '—'} ({report.riskLevel ?? '—'})</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Priority</p>
-                <p className="font-semibold text-slate-800">{report.investigation_priority_category ?? '—'}</p>
+                <p className="font-semibold text-slate-800">{report.priority ?? '—'}</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Location</p>
@@ -134,7 +134,7 @@ export default function Investigations() {
               </div>
               <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Detection Confidence</p>
-                <p className="font-semibold text-slate-800">{report.risk_detection_confidence ?? '—'}</p>
+                <p className="font-semibold text-slate-800">{report.confidence ?? '—'}</p>
               </div>
             </div>
             <div>
@@ -142,7 +142,7 @@ export default function Investigations() {
                 <FileText className="w-4 h-4" /> AI-Grounded Investigation Report
               </h4>
               <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                {report.grounded_llm_investigation_report || 'No narrative report has been generated for this work yet.'}
+                {report.report || 'No narrative report has been generated for this work yet.'}
               </div>
             </div>
           </div>

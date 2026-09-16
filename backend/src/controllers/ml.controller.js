@@ -3,58 +3,58 @@ const mlService = require('../services/ml.service');
 
 const getProjects = asyncHandler(async (req, res) => {
   const { limit, offset, risk_level: riskLevel, state, district, constituency, status } = req.query;
-  const data = await mlService.getProjects({ limit, offset, riskLevel, state, district, constituency, status });
+  const data = await mlService.getProjects(req.user, { limit, offset, riskLevel, state, district, constituency, status });
   res.json({ success: true, data });
 });
 
 const getProject = asyncHandler(async (req, res) => {
-  const data = await mlService.getProject(req.params.workId);
+  const data = await mlService.getProject(req.user, req.params.workId);
   res.json({ success: true, data });
 });
 
 const getRiskSummary = asyncHandler(async (req, res) => {
-  const data = await mlService.getRiskSummary();
+  const data = await mlService.getRiskSummary(req.user);
   res.json({ success: true, data });
 });
 
 const getRiskDistribution = asyncHandler(async (req, res) => {
-  const data = await mlService.getRiskDistribution();
+  const data = await mlService.getRiskDistribution(req.user);
   res.json({ success: true, data });
 });
 
 const getInvestigations = asyncHandler(async (req, res) => {
   const { limit, offset, risk_level: riskLevel, priority_category: priorityCategory, state } = req.query;
-  const data = await mlService.getInvestigations({ limit, offset, riskLevel, priorityCategory, state });
+  const data = await mlService.getInvestigations(req.user, { limit, offset, riskLevel, priorityCategory, state });
   res.json({ success: true, data });
 });
 
 const getInvestigation = asyncHandler(async (req, res) => {
-  const data = await mlService.getInvestigation(req.params.workId);
+  const data = await mlService.getInvestigation(req.user, req.params.workId);
   res.json({ success: true, data });
 });
 
 const getInvestigationReport = asyncHandler(async (req, res) => {
-  const data = await mlService.getInvestigationReport(req.params.workId);
+  const data = await mlService.getInvestigationReport(req.user, req.params.workId);
   res.json({ success: true, data });
 });
 
 const getAnalyticsOverview = asyncHandler(async (req, res) => {
-  const data = await mlService.getAnalyticsOverview();
+  const data = await mlService.getAnalyticsOverview(req.user);
   res.json({ success: true, data });
 });
 
 const getAnalyticsStates = asyncHandler(async (req, res) => {
-  const data = await mlService.getAnalyticsStates();
+  const data = await mlService.getAnalyticsStates(req.user);
   res.json({ success: true, data });
 });
 
 const getAnalyticsCategories = asyncHandler(async (req, res) => {
-  const data = await mlService.getAnalyticsCategories();
+  const data = await mlService.getAnalyticsCategories(req.user);
   res.json({ success: true, data });
 });
 
 const getAnalyticsConstituencies = asyncHandler(async (req, res) => {
-  const data = await mlService.getAnalyticsConstituencies();
+  const data = await mlService.getAnalyticsConstituencies(req.user);
   res.json({ success: true, data });
 });
 

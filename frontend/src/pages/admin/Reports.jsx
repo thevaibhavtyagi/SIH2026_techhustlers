@@ -74,42 +74,42 @@ export default function Reports() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <p className="text-xs text-slate-500 mb-1">Total Projects</p>
-              <p className="text-xl font-bold text-slate-800">{formatNumber(report.summary.total_projects)}</p>
+              <p className="text-xl font-bold text-slate-800">{formatNumber(report.summary.totalProjects)}</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <p className="text-xs text-slate-500 mb-1">Avg Risk Score</p>
-              <p className="text-xl font-bold text-slate-800">{report.summary.average_risk_score}</p>
+              <p className="text-xl font-bold text-slate-800">{report.summary.averageRiskScore}</p>
             </div>
             <div className="bg-red-50 rounded-lg p-4 border border-red-100">
               <p className="text-xs text-red-600 mb-1">High + Critical Risk</p>
-              <p className="text-xl font-bold text-red-700">{formatNumber(report.summary.high_critical_projects)}</p>
+              <p className="text-xl font-bold text-red-700">{formatNumber(report.summary.highCriticalProjects)}</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <p className="text-xs text-slate-500 mb-1">Max Risk Score</p>
-              <p className="text-xl font-bold text-slate-800">{report.overview.maximum_risk_score}</p>
+              <p className="text-xl font-bold text-slate-800">{report.overview.maximumRiskScore}</p>
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <p className="text-xs text-slate-500 mb-1">ML-Detected Anomalies</p>
-              <p className="text-lg font-semibold text-slate-800">{formatNumber(report.overview.ml_detected_projects)}</p>
+              <p className="text-lg font-semibold text-slate-800">{formatNumber(report.overview.mlDetectedProjects)}</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <p className="text-xs text-slate-500 mb-1">Flagged by Multiple Engines</p>
-              <p className="text-lg font-semibold text-slate-800">{formatNumber(report.overview.multi_engine_projects)}</p>
+              <p className="text-lg font-semibold text-slate-800">{formatNumber(report.overview.multiEngineProjects)}</p>
             </div>
           </div>
 
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Risk Distribution</p>
             <div className="grid grid-cols-4 gap-3">
-              {Object.entries(report.summary.risk_distribution).map(([level, count]) => (
+              {Object.entries(report.summary.riskDistribution).map(([level, count]) => (
                 <div key={level} className="text-center bg-white border border-slate-200 rounded-lg p-3">
                   <p className="text-lg font-bold text-slate-800">{formatNumber(count)}</p>
                   <p className="text-[11px] text-slate-500 uppercase tracking-wide">{level}</p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {formatPercentage((count / report.summary.total_projects) * 100)}
+                    {formatPercentage((count / report.summary.totalProjects) * 100)}
                   </p>
                 </div>
               ))}

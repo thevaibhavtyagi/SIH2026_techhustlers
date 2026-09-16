@@ -18,6 +18,39 @@ const call = async (fn) => {
   }
 };
 
+// ==========================================
+// SECURITY: DATA SCOPE ENFORCEMENT
+// ==========================================
+
+const enforceListScope = (user, query = {}) => {
+  if (user.role === 'admin') return query;
+  if (user.role === 'mp') {
+    if (!user.constituency) throw new ApiError(403, 'User is missing assigned constituency scope');
+    return { ...query, constituency: user.constituency };
+  }
+  if (user.role === 'district_nodal') {
+    if (!user.state || !user.district) throw new ApiError(403, 'User is missing assigned state/district scope');
+    return { ...query, state: user.state, district: user.district };
+  }
+  throw new ApiError(403, 'Unauthorized role');
+};
+
+const enforceDetailScope = (user, item) => {
+  if (!item) return;
+  if (user.role === 'admin') return;
+  if (user.role === 'mp') {
+    if (!user.constituency || item.constituency !== user.constituency) {
+      throw new ApiError(403, 'Project is outside your assigned constituency');
+    }
+  } else if (user.role === 'district_nodal') {
+    if (!user.state || !user.district || item.state !== user.state || item.district !== user.district) {
+      throw new ApiError(403, 'Project is outside your assigned district');
+    }
+  } else {
+    throw new ApiError(403, 'Unauthorized role');
+  }
+};
+
 // ---------- Projects ----------
 
 const transformProject = (p) => {
@@ -27,7 +60,7 @@ const transformProject = (p) => {
     id: p.work_id,
     name: p.work_description || p.work_category || 'Untitled Project',
     state: p.state,
-    district: p.district,
+    district: p.district || p.ida,
     constituency: p.constituency,
     workType: p.work_category,
     status: p.work_status || 'In Progress',
@@ -38,14 +71,27 @@ const transformProject = (p) => {
     expenditure: p.total_expenditure || 0,
     riskScore: p.final_ai_risk_score ? Math.round(p.final_ai_risk_score) : 0,
     riskLevel: p.final_ai_risk_level,
+    financialRiskScore: p.financial_risk_score,
+    sanctionDelayDays: p.sanction_delay_days,
+    completionDurationDays: p.completion_duration_days,
+    ensembleRiskLevel: p.ensemble_risk_level,
     contractorId: 'CTR-' + (p.work_id ? p.work_id.slice(-4) : '0000')
   };
 };
 
-const getProjects = async ({ limit, offset, riskLevel, state, district, constituency, status } = {}) => {
+const getProjects = async (user, filters = {}) => {
+  const scopedFilters = enforceListScope(user, filters);
   const data = await call(() =>
     mlClient.get('/projects', {
-      params: { limit, offset, risk_level: riskLevel, state, district, constituency, status },
+      params: { 
+        limit: scopedFilters.limit, 
+        offset: scopedFilters.offset, 
+        risk_level: scopedFilters.riskLevel, 
+        state: scopedFilters.state, 
+        district: scopedFilters.district, 
+        constituency: scopedFilters.constituency, 
+        status: scopedFilters.status 
+      },
     })
   );
   if (data && data.projects) {
@@ -54,37 +100,149 @@ const getProjects = async ({ limit, offset, riskLevel, state, district, constitu
   return data;
 };
 
-const getProject = async (workId) => {
+const getProject = async (user, workId) => {
   const data = await call(() => mlClient.get(`/projects/${encodeURIComponent(workId)}`));
-  return transformProject(data);
+  const project = transformProject(data);
+  enforceDetailScope(user, project);
+  return project;
+};
+
+// ---------- Transformers ----------
+
+const transformRiskSummaryResponse = (s) => {
+  if (!s) return null;
+  return {
+    ...s,
+    totalProjects: s.total_projects,
+    riskDistribution: s.risk_distribution,
+    averageRiskScore: s.average_risk_score,
+    highCriticalProjects: s.high_critical_projects
+  };
+};
+
+const transformAnalyticsOverview = (a) => {
+  if (!a) return null;
+  return {
+    ...a,
+    totalProjects: a.total_projects,
+    totalSanctionedAmount: a.total_sanctioned_amount,
+    totalExpenditure: a.total_expenditure,
+    completedProjects: a.completed_projects,
+    pendingProjects: a.pending_projects,
+    riskDistribution: a.risk_distribution,
+    averageRiskScore: a.average_risk_score,
+    maximumRiskScore: a.maximum_risk_score,
+    highCriticalProjects: a.high_critical_projects,
+    mlDetectedProjects: a.ml_detected_projects,
+    multiEngineProjects: a.multi_engine_projects,
+  };
+};
+
+const transformStateAnalytics = (s) => {
+  if (!s) return null;
+  return {
+    ...s,
+    totalProjects: s.total_projects,
+    totalSanctionedAmount: s.total_sanctioned_amount,
+    totalExpenditure: s.total_expenditure,
+    averageRiskScore: s.average_risk_score,
+    highRisk: s.high_risk,
+    criticalRisk: s.critical_risk,
+  };
+};
+
+const transformInvestigationData = (i) => {
+  if (!i) return null;
+  return {
+    ...i,
+    workId: i.work_id,
+    riskScore: i.final_ai_risk_score ? Math.round(i.final_ai_risk_score) : 0,
+    riskLevel: i.final_ai_risk_level,
+    priority: i.investigation_priority_category,
+    rank: i.investigation_rank,
+    primarySignal: i.primary_risk_source,
+    confidence: i.risk_detection_confidence,
+    report: i.grounded_llm_investigation_report,
+    reportStatus: i.report_status,
+  };
 };
 
 // ---------- Risk ----------
 
-const getRiskSummary = () => call(() => mlClient.get('/risk/summary'));
+const getRiskSummary = async (user) => {
+  const params = enforceListScope(user, {});
+  const data = await call(() => mlClient.get('/risk/summary', { params }));
+  return transformRiskSummaryResponse(data);
+};
 
-const getRiskDistribution = () => call(() => mlClient.get('/risk/distribution'));
+const getRiskDistribution = async (user) => {
+  const params = enforceListScope(user, {});
+  return call(() => mlClient.get('/risk/distribution', { params }));
+};
 
 // ---------- Investigations ----------
 
-const getInvestigations = ({ limit, offset, riskLevel, priorityCategory, state } = {}) =>
-  call(() =>
+const getInvestigations = async (user, filters = {}) => {
+  const scopedFilters = enforceListScope(user, filters);
+  const data = await call(() =>
     mlClient.get('/investigations', {
-      params: { limit, offset, risk_level: riskLevel, priority_category: priorityCategory, state },
+      params: { 
+        limit: scopedFilters.limit, 
+        offset: scopedFilters.offset, 
+        risk_level: scopedFilters.riskLevel, 
+        priority_category: scopedFilters.priorityCategory, 
+        state: scopedFilters.state,
+        district: scopedFilters.district,
+        constituency: scopedFilters.constituency
+      },
     })
   );
+  if (data && data.investigations) {
+    data.investigations = data.investigations.map(transformInvestigationData);
+  } else if (Array.isArray(data)) {
+    return data.map(transformInvestigationData);
+  }
+  return data;
+};
 
-const getInvestigation = (workId) => call(() => mlClient.get(`/investigations/${encodeURIComponent(workId)}`));
+const getInvestigation = async (user, workId) => {
+  const data = await call(() => mlClient.get(`/investigations/${encodeURIComponent(workId)}`));
+  enforceDetailScope(user, data);
+  return transformInvestigationData(data);
+};
 
-const getInvestigationReport = (workId) =>
-  call(() => mlClient.get(`/investigations/${encodeURIComponent(workId)}/report`));
+const getInvestigationReport = async (user, workId) => {
+  // To enforce detail scope on a report string, we must first fetch the investigation metadata
+  await getInvestigation(user, workId); // This will throw 403 if out of scope
+  const data = await call(() => mlClient.get(`/investigations/${encodeURIComponent(workId)}/report`));
+  return transformInvestigationData(data);
+};
 
 // ---------- Analytics ----------
 
-const getAnalyticsOverview = () => call(() => mlClient.get('/analytics/overview'));
-const getAnalyticsStates = () => call(() => mlClient.get('/analytics/states'));
-const getAnalyticsCategories = () => call(() => mlClient.get('/analytics/categories'));
-const getAnalyticsConstituencies = () => call(() => mlClient.get('/analytics/constituencies'));
+const getAnalyticsOverview = async (user) => {
+  const params = enforceListScope(user, {});
+  const data = await call(() => mlClient.get('/analytics/overview', { params }));
+  return transformAnalyticsOverview(data);
+};
+
+const getAnalyticsStates = async (user) => {
+  const params = enforceListScope(user, {});
+  const data = await call(() => mlClient.get('/analytics/states', { params }));
+  return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
+};
+
+const getAnalyticsCategories = async (user) => {
+  const params = enforceListScope(user, {});
+  const data = await call(() => mlClient.get('/analytics/categories', { params }));
+  return Array.isArray(data) ? data.map(transformStateAnalytics) : data; // category has similar fields
+};
+
+const getAnalyticsConstituencies = async (user) => {
+  const params = enforceListScope(user, {});
+  const data = await call(() => mlClient.get('/analytics/constituencies', { params }));
+  return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
+};
 
 module.exports = {
   getProjects,

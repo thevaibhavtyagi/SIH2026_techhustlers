@@ -34,23 +34,23 @@ export default function Expenditure() {
   }, [filterValues]);
 
   const filtered = search
-    ? projects.filter((p) => p.work_id.toLowerCase().includes(search.toLowerCase()) || p.work_description?.toLowerCase().includes(search.toLowerCase()))
+    ? projects.filter((p) => p.id.toLowerCase().includes(search.toLowerCase()) || p.name?.toLowerCase().includes(search.toLowerCase()))
     : projects;
 
   const columns = [
-    { key: 'work_id', label: 'Work ID', sortable: true, render: (v) => <span className="font-mono text-xs">{v}</span> },
-    { key: 'work_description', label: 'Project', width: '28%', render: (v, row) => (
+    { key: 'id', label: 'Work ID', sortable: true, render: (v) => <span className="font-mono text-xs">{v}</span> },
+    { key: 'name', label: 'Project', width: '28%', render: (v, row) => (
       <div>
-        <p className="text-sm text-slate-800 truncate max-w-xs" title={v}>{v || '—'}</p>
+        <p className="text-sm font-medium text-slate-800 truncate max-w-[200px]" title={v}>{v || '—'}</p>
         <p className="text-xs text-slate-500">{row.constituency}, {row.state}</p>
       </div>
     ) },
-    { key: 'sanction_amount', label: 'Sanctioned', sortable: true, render: (v) => formatCurrencyFull(v) },
-    { key: 'total_expenditure', label: 'Expenditure', sortable: true, render: (v) => v == null ? '—' : formatCurrencyFull(v) },
-    { key: 'expenditure_ratio', label: 'Utilization', sortable: true, render: (v) => v == null ? '—' : (
-      <span className={v > 1 ? 'text-red-600 font-semibold' : 'text-slate-700'}>{formatPercentage(v * 100)}</span>
+    { key: 'sanctionedAmount', label: 'Sanctioned', sortable: true, render: (v) => formatCurrencyFull(v) },
+    { key: 'expenditure', label: 'Expenditure', sortable: true, render: (v) => v == null ? '—' : formatCurrencyFull(v) },
+    { key: 'progress', label: 'Utilization', sortable: true, render: (v) => v == null ? '—' : (
+      <span className={v > 90 ? 'text-green-600 font-semibold' : 'text-slate-700'}>{v}%</span>
     ) },
-    { key: 'financial_risk_score', label: 'Financial Risk', sortable: true, render: (v) => v == null ? '—' : Math.round(v) },
+    { key: 'financialRiskScore', label: 'Financial Risk', sortable: true, render: (v) => v == null ? '—' : Math.round(v) },
   ];
 
   return (

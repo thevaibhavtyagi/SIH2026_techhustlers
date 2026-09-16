@@ -22,6 +22,8 @@ def get_investigations(
     risk_level: str | None = None,
     priority_category: str | None = None,
     state: str | None = None,
+    district: str | None = None,
+    constituency: str | None = None,
 ):
     return investigation_service.get_investigations(
         limit=limit,
@@ -29,6 +31,8 @@ def get_investigations(
         risk_level=risk_level,
         priority_category=priority_category,
         state=state,
+        district=district,
+        constituency=constituency,
     )
 
 

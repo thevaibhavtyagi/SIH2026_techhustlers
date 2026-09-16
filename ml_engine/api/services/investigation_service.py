@@ -109,6 +109,8 @@ class InvestigationService:
         risk_level=None,
         priority_category=None,
         state=None,
+        district=None,
+        constituency=None,
     ):
 
         df = self.queue.copy()
@@ -145,6 +147,28 @@ class InvestigationService:
                 .str.lower()
                 .str.contains(
                     state.lower(),
+                    na=False
+                )
+            ]
+
+        if district:
+            df = df[
+                df["ida"]
+                .astype(str)
+                .str.lower()
+                .str.contains(
+                    district.lower(),
+                    na=False
+                )
+            ]
+
+        if constituency:
+            df = df[
+                df["constituency"]
+                .astype(str)
+                .str.lower()
+                .str.contains(
+                    constituency.lower(),
                     na=False
                 )
             ]

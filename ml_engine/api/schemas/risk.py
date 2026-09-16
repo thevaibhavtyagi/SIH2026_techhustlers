@@ -27,6 +27,11 @@ class RiskDistributionResponse(BaseModel):
 class AnalyticsOverviewResponse(BaseModel):
 
     total_projects: int
+    total_sanctioned_amount: float
+    total_expenditure: float
+    completed_projects: int
+    pending_projects: int
+
     risk_distribution: RiskDistribution
 
     average_risk_score: float

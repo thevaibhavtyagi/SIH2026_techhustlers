@@ -64,7 +64,7 @@ class ProjectService:
             df = df[df["state"].astype(str).str.lower().str.contains(state.lower(), na=False)]
             
         if district:
-            df = df[df["district"].astype(str).str.lower().str.contains(district.lower(), na=False)]
+            df = df[df["ida"].astype(str).str.lower().str.contains(district.lower(), na=False)]
             
         if constituency:
             df = df[df["constituency"].astype(str).str.lower().str.contains(constituency.lower(), na=False)]

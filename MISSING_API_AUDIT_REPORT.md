@@ -81,14 +81,39 @@ Hardcoded arrays in components:
 
 ### 7.1 Dashboard Time-Series Gap
 **Issue**: The Dashboard displays a monthly expenditure and utilization trend chart (`EXPENDITURE_TREND_MOCK`). The backend does not currently aggregate data by month.
-**Data Source**: The dataset contains `sanction_date` (often null/dirty) and `expected_completion`, but lacks a rigorous ledger of month-by-month expenditure payouts.
+
+**Dataset Investigation Results**:
+- **Valid Date Columns**: `recommended_date`, `sanction_date`, `completion_date`.
+- **Date Completeness**: 
+  - `recommended_date`: 0% nulls (100% complete)
+  - `sanction_date`: 41.75% nulls
+  - `completion_date`: 59.72% nulls (expected for incomplete projects)
+- **Expenditure Limitation**: **DATA NOT CURRENTLY AVAILABLE**. The dataset provides a scalar `total_expenditure` value but possesses absolutely no transaction dates or payout ledgers. Therefore, it is **impossible** to legitimately calculate or render a monthly expenditure trend.
+
 **Proposed Specification**:
 - **Endpoint**: `GET /api/analytics/timeseries`
-- **Purpose**: Monthly trend data for dashboard rendering.
-- **Authentication/RBAC**: Standard (Admin/MP/District).
-- **Data Scope**: Respects Step 8 constraints.
-- **Response**: Array of `{ month: "YYYY-MM", totalSanctioned: 0, totalExpenditure: 0, completedProjects: 0 }`.
-- **Note**: This will require the ML Engine to extrapolate or bucket historical data by `sanction_date` to approximate a timeseries.
+- **Purpose**: Monthly trend data for dashboard rendering, strictly limited to project milestones (recommendations/sanctions/completions) based on valid dates.
+- **Authentication**: Required.
+- **RBAC**: Admin / MP / District Nodal.
+- **Data Scope**: 
+  - Admin = national
+  - MP = assigned constituency
+  - District Nodal = assigned state + district
+- **Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "month": "YYYY-MM",
+      "totalSanctioned": 0,
+      "completedProjects": 0,
+      "recommendedProjects": 0
+    }
+  ]
+}
+```
+- **Note**: Records with missing dates must NOT be artificially assigned to a month. The `totalExpenditure` field has been omitted from the proposed response because the dataset cannot support it. Do NOT fabricate date mappings.
 
 ### 7.2 Contractors Gap
 **Issue**: The `Contractors.jsx` page relies entirely on `MOCK_CONTRACTORS`.
@@ -118,7 +143,7 @@ Hardcoded arrays in components:
 
 ## 8. Security & Response Contracts
 All proposed APIs **must** enforce Step 8 role-based access control (Admin = National, MP = Constituency, District Nodal = State+District). 
-They **must** adhere to Step 9 response formatting conventions, returning a `{ status: "success", data: { ... } }` envelope with frontend-facing `camelCase` fields.
+They **must** adhere to Step 9 response formatting conventions, returning a `{ "success": true, "data": { ... } }` envelope with frontend-facing `camelCase` fields.
 
 ---
 
@@ -131,4 +156,7 @@ They **must** adhere to Step 9 response formatting conventions, returning a `{ s
 | Contractors Page | Contractor directory & metrics | None | Source data missing | `GET /api/contractors` | **P3** (Blocked by Data) |
 | Drishti Copilot | Natural language query responses | None | LLM integration missing| `POST /api/copilot/query` | **P3** (Future Phase) |
 
-**Final Status**: MISSING API AUDIT COMPLETE. No new backend development is required to maintain the current operational baseline, with the exception of the P0 timeseries endpoint needed to remove the final dashboard mock data.
+**Final Recommendation**: 
+Do NOT implement the `GET /api/analytics/timeseries` API yet. The dashboard's promise of a "monthly expenditure trend" is fundamentally incompatible with the current dataset (which lacks expenditure transaction dates). The UI should eventually be redesigned to display only metrics that the dataset can truthfully support (e.g., monthly recommended/sanctioned/completed projects), rather than fabricating expenditure timelines.
+
+**Final Status**: MISSING API AUDIT COMPLETE. No new backend development is required to maintain the current operational baseline, with the exception of the P0 timeseries endpoint needed to remove the final dashboard mock data (pending UI redesign to remove the impossible expenditure metric).

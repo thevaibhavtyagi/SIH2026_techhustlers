@@ -16,6 +16,11 @@ module.exports = {
 
   mlEngineUrl: process.env.ML_ENGINE_URL || 'http://localhost:8000',
 
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || null,
+    model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
+  },
+
   supabase: {
     url: process.env.SUPABASE_URL,
     // Server-side only — full admin access, bypasses Row Level Security. Never expose to the client.

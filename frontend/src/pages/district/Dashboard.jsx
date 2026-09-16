@@ -5,6 +5,7 @@ import KPICard from '../../components/common/KPICard';
 import { PageHeader, ChartCard } from '../../components/common/UIComponents';
 import { StatusBadge } from '../../components/common/RiskBadge';
 import { FolderKanban, IndianRupee, Clock, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { formatCurrency } from '../../utils/formatters';
 
 export default function DistrictDashboard() {
@@ -12,6 +13,7 @@ export default function DistrictDashboard() {
   const [overview, setOverview] = useState(null);
   const [projects, setProjects] = useState([]);
   const [recentFlags, setRecentFlags] = useState([]);
+  const [timeseries, setTimeseries] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -21,11 +23,13 @@ export default function DistrictDashboard() {
       riskApi.getAnalyticsOverview(),
       riskApi.getProjects({ limit: 5 }),
       riskApi.getInvestigations({ limit: 4 }),
+      riskApi.getAnalyticsTimeseries(),
     ])
-      .then(([ov, projectsData, invData]) => {
+      .then(([ov, projectsData, invData, tsData]) => {
         setOverview(ov);
         setProjects(projectsData?.projects || []);
         setRecentFlags(invData?.investigations || []);
+        setTimeseries(tsData || []);
       })
       .catch((err) => setError(err?.response?.data?.message || 'Could not load dashboard data.'));
   }, [user]);
@@ -63,6 +67,31 @@ export default function DistrictDashboard() {
         <KPICard icon={Clock} label="Completion Rate" value={completionRate} suffix="%" color="green" />
         <KPICard icon={AlertTriangle} label="High+Critical Risk" value={overview.highCriticalProjects ?? 0} color={(overview.highCriticalProjects ?? 0) > 0 ? 'red' : 'green'} />
       </div>
+
+      {/* Monthly Project Activity */}
+      <ChartCard
+        title="Monthly Project Activity"
+        subtitle="Projects recommended, sanctioned, and completed by month"
+      >
+        <ResponsiveContainer width="100%" height={240}>
+          {timeseries.length > 0 ? (
+            <BarChart data={timeseries}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
+              <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Bar dataKey="recommendedProjects" name="Recommended" fill="#64748b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sanctionedProjects" name="Sanctioned" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="completedProjects" name="Completed" fill="#22c55e" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          ) : (
+            <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+              No activity data available.
+            </div>
+          )}
+        </ResponsiveContainer>
+      </ChartCard>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Projects */}

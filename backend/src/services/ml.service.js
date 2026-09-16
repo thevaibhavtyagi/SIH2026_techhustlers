@@ -161,6 +161,16 @@ const transformInvestigationData = (i) => {
   };
 };
 
+const transformTimeseriesData = (t) => {
+  if (!t) return null;
+  return {
+    ...t,
+    recommendedProjects: t.recommended_projects,
+    sanctionedProjects: t.sanctioned_projects,
+    completedProjects: t.completed_projects,
+  };
+};
+
 // ---------- Risk ----------
 
 const getRiskSummary = async (user) => {
@@ -296,6 +306,14 @@ const getAnalyticsConstituencies = async (user) => {
   return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 
+const getAnalyticsTimeseries = async (user) => {
+  const params = enforceListScope(user, {});
+  const data = await call(() => mlClient.get('/analytics/timeseries', { params }));
+  // FastAPI returns { success: true, data: [...] } due to the TimeseriesResponse model
+  const timeseries = data.data || data; 
+  return Array.isArray(timeseries) ? timeseries.map(transformTimeseriesData) : timeseries;
+};
+
 module.exports = {
   getProjects,
   getProject,
@@ -308,4 +326,5 @@ module.exports = {
   getAnalyticsStates,
   getAnalyticsCategories,
   getAnalyticsConstituencies,
+  getAnalyticsTimeseries,
 };

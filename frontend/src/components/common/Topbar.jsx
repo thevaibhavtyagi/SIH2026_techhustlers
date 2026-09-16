@@ -16,35 +16,29 @@ export default function Topbar() {
   ];
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
+    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-4 flex-1">
         {/* Search */}
-        <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-80 focus-within:border-gov-blue-500 focus-within:ring-1 focus-within:ring-gov-blue-500/30 transition-all">
-          <Search className="w-4 h-4 text-slate-400" />
+        <div className="hidden md:flex items-center gap-2.5 bg-slate-50/80 hover:bg-white border border-slate-200 rounded-xl px-4 py-2.5 w-[28rem] shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] focus-within:bg-white focus-within:border-gov-blue-500 focus-within:ring-2 focus-within:ring-gov-blue-500/20 transition-all duration-300 group">
+          <Search className="w-5 h-5 text-slate-400 group-focus-within:text-gov-blue-500 transition-colors" />
           <input
             type="text"
             placeholder="Search projects, alerts, contractors..."
-            className="bg-transparent text-sm outline-none flex-1 text-slate-700 placeholder:text-slate-400"
+            className="bg-transparent text-[14.5px] outline-none flex-1 text-slate-700 placeholder:text-slate-400"
           />
-          <kbd className="hidden lg:inline text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
+          <kbd className="hidden lg:inline text-[11px] text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-md font-mono shadow-sm">⌘K</kbd>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Demo Badge */}
-        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 text-[11px] font-medium rounded-full border border-amber-200">
-          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse-subtle" />
-          DEMO ENVIRONMENT
-        </span>
-
+      <div className="flex items-center gap-5 mr-2">
         {/* Notifications */}
         <div className="relative">
           <button
             onClick={() => { setShowNotif(!showNotif); setShowProfile(false); }}
-            className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="relative p-2.5 text-slate-500 hover:text-navy-900 hover:bg-slate-100 rounded-xl transition-all"
           >
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            <Bell className="w-7 h-7" strokeWidth={1.5} />
+            <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">
               {notifications.filter(n => !n.read).length}
             </span>
           </button>
@@ -71,16 +65,16 @@ export default function Topbar() {
         <div className="relative">
           <button
             onClick={() => { setShowProfile(!showProfile); setShowNotif(false); }}
-            className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+            className="flex items-center gap-3 px-2 py-1.5 hover:bg-slate-100/80 rounded-xl transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-navy-800 text-white flex items-center justify-center text-xs font-bold">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-navy-800 to-navy-900 text-white flex items-center justify-center text-base font-bold shadow-md ring-2 ring-white">
               {user?.name?.charAt(0) || 'U'}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-medium text-slate-700 leading-tight">{user?.name}</p>
-              <p className="text-[11px] text-slate-400">{user?.designation || user?.role}</p>
+              <p className="text-[14.5px] font-bold text-slate-700 leading-tight">{user?.name}</p>
+              <p className="text-[12px] font-medium text-slate-500">{user?.designation || user?.role}</p>
             </div>
-            <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
+            <ChevronDown className="w-5 h-5 text-slate-400 hidden md:block" />
           </button>
 
           {showProfile && (

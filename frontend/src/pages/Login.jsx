@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
-import { Eye, EyeOff, Lock, Mail, UserCog, Shield, TrendingUp, AlertTriangle, BarChart3, Activity, Globe, Fingerprint } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, UserCog, Shield, ShieldCheck, TrendingUp, AlertTriangle, BarChart3, Activity, Globe, Fingerprint } from 'lucide-react';
 import { LOGIN_ROLES, ROLE_DASHBOARD_PATH } from '../utils/constants';
 import logo from '../assets/mplads-drishti-logo.png';
 
@@ -37,26 +37,49 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* ========== Left Panel — Clean Logo Visual ========== */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-sky-50 via-sky-100/40 to-white items-center justify-center relative border-r border-slate-200/60 p-12">
+    <div className="h-screen overflow-hidden flex">
+      {/* ========== Left Panel — Official Logo Visual ========== */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-sky-50 via-sky-100/50 to-white flex-col items-center justify-center relative border-r border-sky-100/60 p-6">
         {/* Subtle background decoration */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-white/80 blur-3xl" />
-          <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-sky-200/30 blur-3xl" />
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-sky-200/40 blur-[100px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-200/30 blur-[100px]" />
         </div>
 
-        <Link to="/" className="relative z-10 w-full flex justify-center hover:scale-[1.02] transition-all duration-700 p-6">
-          <img 
-            src={logo} 
-            alt="MPLADS DRISHTI Logo" 
-            className="w-full max-w-[36rem] object-contain drop-shadow-2xl hover:drop-shadow-[0_35px_45px_rgba(0,0,0,0.15)] transition-all duration-700"
-          />
+        <Link to="/" className="relative z-10 w-full max-w-xl flex flex-col items-center justify-center group">
+          
+          {/* Top Context - Official Ministry Badge */}
+          <div className="z-20 flex items-center gap-3 px-5 py-2 bg-white/60 backdrop-blur-md border border-slate-200/50 rounded-full shadow-sm transform group-hover:-translate-y-0.5 transition-transform duration-500">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-extrabold text-navy-800 tracking-[0.2em] uppercase">
+              Ministry of Statistics & Programme Implementation
+            </span>
+          </div>
+
+          {/* Main Logo Container */}
+          <div className="relative w-full flex justify-center -my-10 z-10">
+             <div className="absolute inset-0 bg-sky-300/20 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+             <img 
+               src={logo} 
+               alt="MPLADS Platform" 
+               className="relative w-full max-w-[54rem] max-h-[75vh] object-contain drop-shadow-2xl group-hover:scale-[1.02] transition-transform duration-700 group-hover:drop-shadow-[0_20px_40px_rgba(14,165,233,0.25)]"
+             />
+          </div>
+          
+          {/* Bottom Context - Premium Capabilities Card */}
+          <div className="-mt-10 z-20 relative max-w-sm text-center bg-white/60 backdrop-blur-md border border-white p-5 rounded-3xl shadow-xl shadow-sky-100/50 transform group-hover:-translate-y-1 transition-transform duration-500">
+            <h3 className="text-[15px] font-bold text-navy-900 mb-1.5 tracking-tight">
+              Intelligent Oversight Platform
+            </h3>
+            <p className="text-[12.5px] text-slate-600 leading-relaxed font-medium">
+              Empowering authorities with AI-driven analytics, real-time anomaly detection, and comprehensive financial tracking for national development.
+            </p>
+          </div>
         </Link>
       </div>
 
       {/* ========== Right Panel — Login Form ========== */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-slate-50">
+      <div className="lg:w-1/2 w-full flex items-center justify-center px-6 py-8 bg-slate-50">
         {/* Increased form size from max-w-md to max-w-lg (wider) and increased padding */}
         <div className="w-full max-w-lg bg-white p-12 rounded-[2rem] shadow-2xl shadow-slate-200/60 border border-slate-100">
           {/* Mobile-only header */}
@@ -160,9 +183,12 @@ export default function Login() {
 
           {/* Footer note */}
           <div className="mt-10 pt-8 border-t border-slate-100">
-            <p className="text-center text-xs text-slate-400 font-medium leading-relaxed">
-              This is a secure government portal. Unauthorized access is strictly prohibited and actively monitored.
-            </p>
+            <div className="flex items-start sm:items-center justify-center gap-2 text-xs text-slate-400 font-medium leading-relaxed max-w-sm mx-auto">
+              <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 sm:mt-0" strokeWidth={2.5} />
+              <p className="text-left sm:text-center">
+                This is a secure government portal. Unauthorized access is strictly prohibited and actively monitored.
+              </p>
+            </div>
           </div>
         </div>
       </div>

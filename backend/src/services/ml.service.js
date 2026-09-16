@@ -1,5 +1,8 @@
 const mlClient = require('../config/mlClient');
 const ApiError = require('../utils/ApiError');
+const llmService = require('./llmService');
+const investigationReportRepo = require('../repositories/investigationReport.repository');
+const projectRepo = require('../repositories/project.repository');
 
 // Runs an axios call against the ml_engine FastAPI service, translating
 // network/HTTP failures into ApiError so routes don't need try/catch.
@@ -79,29 +82,20 @@ const transformProject = (p) => {
   };
 };
 
+// Reads from Supabase's `projects` table (database/data_schema.sql, populated
+// via `npm run ingest-data`) instead of the FastAPI/CSV gateway — this is the
+// same table `createProject` writes to, so newly-added projects show up here
+// immediately instead of only existing in a database nothing reads from.
 const getProjects = async (user, filters = {}) => {
   const scopedFilters = enforceListScope(user, filters);
-  const data = await call(() =>
-    mlClient.get('/projects', {
-      params: { 
-        limit: scopedFilters.limit, 
-        offset: scopedFilters.offset, 
-        risk_level: scopedFilters.riskLevel, 
-        state: scopedFilters.state, 
-        district: scopedFilters.district, 
-        constituency: scopedFilters.constituency, 
-        status: scopedFilters.status 
-      },
-    })
-  );
-  if (data && data.projects) {
-    data.projects = data.projects.map(transformProject);
-  }
+  const data = await projectRepo.list(scopedFilters);
+  data.projects = data.projects.map(transformProject);
   return data;
 };
 
 const getProject = async (user, workId) => {
-  const data = await call(() => mlClient.get(`/projects/${encodeURIComponent(workId)}`));
+  const data = await projectRepo.getByWorkId(workId);
+  if (!data) throw ApiError.notFound(`Project '${workId}' not found`);
   const project = transformProject(data);
   enforceDetailScope(user, project);
   return project;
@@ -211,11 +205,55 @@ const getInvestigation = async (user, workId) => {
   return transformInvestigationData(data);
 };
 
+// Only 20 of 175 queued investigations have a pre-generated report from the
+// offline batch script (ml_engine/notebooks/generate_grounded_llm_explanations_v3.py).
+// The single-item /investigations/:id endpoint is filtered through a narrow
+// Pydantic schema that drops several fields the report prompt needs
+// (verified_observations, financial/statistical sub-scores), so page through
+// the list endpoint — which returns full raw rows — to find them.
+const findRawInvestigation = async (user, workId) => {
+  let offset = 0;
+  while (true) {
+    const page = await getInvestigations(user, { limit: 100, offset });
+    const list = page?.investigations || [];
+    const match = list.find((i) => i.work_id === workId || i.workId === workId);
+    if (match) return match;
+    const total = page?.total ?? 0;
+    if (!list.length || offset + list.length >= total) return null;
+    offset += 100;
+  }
+};
+
 const getInvestigationReport = async (user, workId) => {
   // To enforce detail scope on a report string, we must first fetch the investigation metadata
-  await getInvestigation(user, workId); // This will throw 403 if out of scope
-  const data = await call(() => mlClient.get(`/investigations/${encodeURIComponent(workId)}/report`));
-  return transformInvestigationData(data);
+  const investigation = await getInvestigation(user, workId); // This will throw 403/404 if out of scope/missing
+
+  // Persisted reports (database/data_schema.sql#investigation_reports) short-circuit
+  // everything below — once a report has been seen once (offline batch, ingested via
+  // `npm run ingest-data`, or previously live-generated), it's served straight from
+  // Supabase forever after, with no dependency on the ML engine or Groq being up.
+  const persisted = await investigationReportRepo.findByWorkId(workId);
+  if (persisted) {
+    return { ...investigation, report: persisted.report_text, reportStatus: persisted.report_status };
+  }
+
+  try {
+    const data = await call(() => mlClient.get(`/investigations/${encodeURIComponent(workId)}/report`));
+    const transformed = transformInvestigationData(data);
+    if (transformed?.report) {
+      await investigationReportRepo.upsert({ workId, reportText: transformed.report, source: 'offline_batch_v3' });
+    }
+    return transformed;
+  } catch (err) {
+    if (err.statusCode !== 404) throw err;
+    // No pre-generated report exists for this project — generate one live via
+    // Groq, in the same grounded style as the offline batch script, and persist
+    // it so it's never regenerated again.
+    const raw = (await findRawInvestigation(user, workId)) || investigation;
+    const generated = await llmService.generateInvestigationReport(raw);
+    await investigationReportRepo.upsert({ workId, reportText: generated.text, source: 'live_groq' });
+    return { ...investigation, report: generated.text, reportStatus: 'GENERATED_LIVE' };
+  }
 };
 
 // ---------- Analytics ----------
@@ -229,18 +267,32 @@ const getAnalyticsOverview = async (user) => {
 const getAnalyticsStates = async (user) => {
   const params = enforceListScope(user, {});
   const data = await call(() => mlClient.get('/analytics/states', { params }));
+  // ML engine returns { total_states, states: [...] } — NOT a bare array.
+  // Array.isArray(data) is therefore false and the transformer must be applied
+  // to the nested 'states' array explicitly.
+  if (data && Array.isArray(data.states)) {
+    return { ...data, states: data.states.map(transformStateAnalytics) };
+  }
   return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 
 const getAnalyticsCategories = async (user) => {
   const params = enforceListScope(user, {});
   const data = await call(() => mlClient.get('/analytics/categories', { params }));
-  return Array.isArray(data) ? data.map(transformStateAnalytics) : data; // category has similar fields
+  // ML engine returns { total_categories, categories: [...] }
+  if (data && Array.isArray(data.categories)) {
+    return { ...data, categories: data.categories.map(transformStateAnalytics) };
+  }
+  return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 
 const getAnalyticsConstituencies = async (user) => {
   const params = enforceListScope(user, {});
   const data = await call(() => mlClient.get('/analytics/constituencies', { params }));
+  // ML engine returns { total_constituencies, constituencies: [...] }
+  if (data && Array.isArray(data.constituencies)) {
+    return { ...data, constituencies: data.constituencies.map(transformStateAnalytics) };
+  }
   return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 

@@ -22,14 +22,32 @@ class AnalyticsService:
             low_memory=False
         )
 
+        self.data["sanction_amount"] = pd.to_numeric(
+            self.data["sanction_amount"], errors="coerce"
+        ).fillna(0)
+
+        self.data["total_expenditure"] = pd.to_numeric(
+            self.data["total_expenditure"], errors="coerce"
+        ).fillna(0)
+
         print(
             f"Analytics data loaded: "
             f"{len(self.data)} projects"
         )
 
-    def get_overview(self):
-
+    def _filter_data(self, state: str = None, district: str = None, constituency: str = None):
         df = self.data.copy()
+        if state:
+            df = df[df["state"].astype(str).str.lower() == state.lower()]
+        if district:
+            df = df[df["ida"].astype(str).str.lower() == district.lower()]
+        if constituency:
+            df = df[df["constituency"].astype(str).str.lower() == constituency.lower()]
+        return df
+
+    def get_overview(self, state: str = None, district: str = None, constituency: str = None):
+
+        df = self._filter_data(state, district, constituency)
 
         # ---------------------------------
         # Total projects
@@ -114,12 +132,29 @@ class AnalyticsService:
         ).sum()
 
         # ---------------------------------
+        # Financials and Status
+        # ---------------------------------
+
+        total_sanctioned_amount = df["sanction_amount"].sum()
+        total_expenditure = df["total_expenditure"].sum()
+
+        completed_projects = (
+            df["work_status"].astype(str).str.lower() == "work completed"
+        ).sum()
+
+        pending_projects = total_projects - completed_projects
+
+        # ---------------------------------
         # Return response
         # ---------------------------------
 
         return {
 
             "total_projects": total_projects,
+            "total_sanctioned_amount": float(total_sanctioned_amount),
+            "total_expenditure": float(total_expenditure),
+            "completed_projects": int(completed_projects),
+            "pending_projects": int(pending_projects),
 
             "risk_distribution": {
                 "LOW": low,
@@ -151,14 +186,16 @@ class AnalyticsService:
             )
         }
 
-    def get_states(self):
+    def get_states(self, state: str = None, district: str = None, constituency: str = None):
 
-        df = self.data.copy()
+        df = self._filter_data(state, district, constituency)
 
         result = (
             df.groupby("state")
             .agg(
                 total_projects=("work_id", "count"),
+                total_sanctioned_amount=("sanction_amount", "sum"),
+                total_expenditure=("total_expenditure", "sum"),
                 average_risk_score=(
                     "final_ai_risk_score",
                     "mean"
@@ -222,14 +259,16 @@ class AnalyticsService:
             )
         }
 
-    def get_categories(self):
+    def get_categories(self, state: str = None, district: str = None, constituency: str = None):
 
-        df = self.data.copy()
+        df = self._filter_data(state, district, constituency)
 
         result = (
             df.groupby("work_category")
             .agg(
                 total_projects=("work_id", "count"),
+                total_sanctioned_amount=("sanction_amount", "sum"),
+                total_expenditure=("total_expenditure", "sum"),
                 average_risk_score=(
                     "final_ai_risk_score",
                     "mean"
@@ -293,9 +332,9 @@ class AnalyticsService:
             )
         }
 
-    def get_constituencies(self):
+    def get_constituencies(self, state: str = None, district: str = None, constituency: str = None):
 
-        df = self.data.copy()
+        df = self._filter_data(state, district, constituency)
 
         result = (
             df.groupby(
@@ -303,6 +342,8 @@ class AnalyticsService:
             )
             .agg(
                 total_projects=("work_id", "count"),
+                total_sanctioned_amount=("sanction_amount", "sum"),
+                total_expenditure=("total_expenditure", "sum"),
                 average_risk_score=(
                     "final_ai_risk_score",
                     "mean"

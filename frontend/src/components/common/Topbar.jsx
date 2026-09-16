@@ -84,10 +84,16 @@ export default function Topbar() {
                 <p className="text-xs text-slate-500">{user?.email}</p>
               </div>
               <div className="py-1">
-                <button className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                <button 
+                  onClick={() => { navigate('/admin/profile'); setShowProfile(false); }}
+                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                >
                   <User className="w-4 h-4" /> Profile
                 </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                <button 
+                  onClick={() => { navigate('/admin/settings'); setShowProfile(false); }}
+                  className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                >
                   <Settings className="w-4 h-4" /> Settings
                 </button>
               </div>

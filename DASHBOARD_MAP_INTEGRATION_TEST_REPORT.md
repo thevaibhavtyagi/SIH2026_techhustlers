@@ -83,20 +83,6 @@ Sikkim, Delhi, Goa, Puducherry, Manipur, Tripura, Chandigarh, ...
 | `Dadra & Nagar Haveli` | `Dadra and Nagar Haveli and Daman and Diu` | Merged UT name in API |
 | `Jammu & Kashmir` (alias) | `Jammu And Kashmir` | `&` vs `and` |
 
-### Resolution
-
-A `normalise()` pipeline is applied to **both** GeoJSON names and API names before matching:
-
-```js
-const normalise = (name) =>
-  (name || '')
-    .toLowerCase()
-    .replace(/&/g, 'and')   // "Jammu & Kashmir" → "jammu and kashmir"
-    .replace(/\s+/g, ' ')   // collapse whitespace
-    .trim();
-```
-
-A `GEOJSON_ALIAS` table maps any residual GeoJSON-specific quirks:
 
 ```js
 const GEOJSON_ALIAS = {
@@ -157,15 +143,30 @@ Admin Dashboard.jsx
 
 ## 5. Risk Color Mapping
 
-| Score Range | API Risk Level | Display Label | Color |
-|-------------|----------------|---------------|-------|
-| 75–100 | `CRITICAL` | Critical | `#ef4444` (red) |
-| 60–74 | `HIGH` | High | `#f97316` (orange) |
-| 40–59 | `MEDIUM` | Moderate | `#f59e0b` (amber) |
-| 0–39 | `LOW` | Low | `#22c55e` (green) |
-| No match | — | No Data | `#e2e8f0` (grey) |
+### The Flaw with Pure Average Scoring
+Initially, the map directly mapped the state's `averageRiskScore` to a color. Because the global project distribution is heavily skewed (most projects are Moderate or Low), a state's mathematical mean score typically sits between `33.00` and `38.00` (even when the state has numerous Critical/High projects). Since `39` is the upper limit for LOW risk, almost every state rendered as GREEN.
 
-> **MEDIUM → Moderate** is an intentional presentation mapping (Step 5 uses `MEDIUM` internally; the map legend shows `Moderate` for readability). No risk calculations were changed.
+### Resolution: Derived Categorical State Risk
+To accurately reflect a state's *intelligence/alert* status according to existing project semantics, the map now derives a categorical risk level from the presence of severe projects:
+
+```javascript
+const getDerivedStateRisk = (sd) => {
+  if ((sd.criticalRisk ?? 0) > 0) return 'Critical';
+  if ((sd.highRisk ?? 0) > 0) return 'High';
+  if ((sd.averageRiskScore ?? 0) >= 40) return 'Moderate';
+  return 'Low';
+};
+```
+
+| Derived Level | Map Color | Condition |
+|---------------|-----------|-----------|
+| `Critical` | `#ef4444` (red) | State has $\ge 1$ Critical project |
+| `High` | `#f97316` (orange) | State has $\ge 1$ High Risk project |
+| `Moderate` | `#f59e0b` (amber) | State average score $\ge 40$ |
+| `Low` | `#22c55e` (green) | State average score $< 40$ and no severe projects |
+| No match | `#e2e8f0` (grey) | No data for state |
+
+> **Note**: This fix was also applied to `GeographicIntel.jsx` to ensure visual consistency across all map and chart visualisations.
 
 ---
 
@@ -292,10 +293,12 @@ The frontend does NOT filter — it displays exactly what the backend returns. S
 | `/analytics/states` request | 200 | ✅ |
 | Real state data displayed | Colors from API | ✅ |
 | State name matching | Normalisation pipeline | ✅ |
-| Risk coloring | Matches averageRiskScore | ✅ |
-| Uttar Pradesh | Correct | ✅ |
-| Karnataka | Correct | ✅ |
-| Maharashtra | Correct | ✅ |
+| Risk coloring | Matches derived critical/high presence | ✅ |
+| Uttar Pradesh | High | ✅ |
+| Karnataka | Low/Moderate | ✅ |
+| Maharashtra | Low/Moderate | ✅ |
+| West Bengal | Critical | ✅ |
+| Madhya Pradesh| Critical | ✅ |
 | Jammu And Kashmir | Resolved via normalise() | ✅ |
 | NCT of Delhi → Delhi | Resolved via GEOJSON_ALIAS | ✅ |
 | State click | Shows detail panel | ✅ |

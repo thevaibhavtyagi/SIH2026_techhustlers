@@ -18,17 +18,18 @@ const riskColors = {
   'Low':      '#22c55e',
 };
 
-const riskColorScale = (score) => {
-  if (score >= 75) return '#ef4444';
-  if (score >= 60) return '#f97316';
-  if (score >= 40) return '#f59e0b';
+const riskColorScale = (level) => {
+  if (level === 'Critical') return '#ef4444';
+  if (level === 'High') return '#f97316';
+  if (level === 'Moderate') return '#f59e0b';
   return '#22c55e';
 };
 
-const riskLevelLabel = (score) => {
-  if (score >= 75) return 'Critical';
-  if (score >= 60) return 'High';
-  if (score >= 40) return 'Moderate';
+// Derive a state's categorical risk level based on the presence of high/critical projects
+const getDerivedStateRisk = (sd) => {
+  if ((sd.criticalRisk ?? 0) > 0) return 'Critical';
+  if ((sd.highRisk ?? 0) > 0) return 'High';
+  if ((sd.averageRiskScore ?? 0) >= 40) return 'Moderate';
   return 'Low';
 };
 
@@ -147,8 +148,8 @@ export default function IndiaRiskMap({ onStateSelect, height = 420 }) {
       .attr('d', path)
       .attr('fill', (d) => {
         const sd = getStateRecord(d.properties.ST_NM);
-        // Use averageRiskScore from API; grey if no data match
-        return sd ? riskColorScale(sd.averageRiskScore ?? 0) : '#e2e8f0';
+        // Map risk based on the state's derived risk level
+        return sd ? riskColorScale(getDerivedStateRisk(sd)) : '#e2e8f0';
       })
       .attr('stroke', '#fff')
       .attr('stroke-width', 0.8)
@@ -181,7 +182,7 @@ export default function IndiaRiskMap({ onStateSelect, height = 420 }) {
                    <span style="color:#64748b">Critical:</span>
                    <span style="font-weight:600;color:#ef4444">${sd.criticalRisk ?? 0}</span>
                    <span style="color:#64748b">Avg Risk Score:</span>
-                   <span style="font-weight:600;color:${riskColorScale(sd.averageRiskScore ?? 0)}">${Math.round(sd.averageRiskScore ?? 0)}</span>
+                   <span style="font-weight:600;color:${riskColorScale(getDerivedStateRisk(sd))}">${Math.round(sd.averageRiskScore ?? 0)}</span>
                  </div>`
               : `<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:#1e293b">${stNm}</div>
                  <span style="color:#94a3b8;font-size:11px">No project data available</span>`
@@ -209,7 +210,7 @@ export default function IndiaRiskMap({ onStateSelect, height = 420 }) {
             // Normalised fields for the selected-state panel
             name:            sd.state,
             riskScore:       Math.round(sd.averageRiskScore ?? 0),
-            riskLevel:       riskLevelLabel(sd.averageRiskScore ?? 0),
+            riskLevel:       getDerivedStateRisk(sd),
             projects:        sd.totalProjects ?? 0,
             highRiskProjects: (sd.highRisk ?? 0) + (sd.criticalRisk ?? 0),
             funds:           (sd.totalSanctionedAmount ?? 0) / 100000, // convert to Lakhs for formatCurrency usage

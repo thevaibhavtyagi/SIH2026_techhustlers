@@ -229,18 +229,32 @@ const getAnalyticsOverview = async (user) => {
 const getAnalyticsStates = async (user) => {
   const params = enforceListScope(user, {});
   const data = await call(() => mlClient.get('/analytics/states', { params }));
+  // ML engine returns { total_states, states: [...] } — NOT a bare array.
+  // Array.isArray(data) is therefore false and the transformer must be applied
+  // to the nested 'states' array explicitly.
+  if (data && Array.isArray(data.states)) {
+    return { ...data, states: data.states.map(transformStateAnalytics) };
+  }
   return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 
 const getAnalyticsCategories = async (user) => {
   const params = enforceListScope(user, {});
   const data = await call(() => mlClient.get('/analytics/categories', { params }));
-  return Array.isArray(data) ? data.map(transformStateAnalytics) : data; // category has similar fields
+  // ML engine returns { total_categories, categories: [...] }
+  if (data && Array.isArray(data.categories)) {
+    return { ...data, categories: data.categories.map(transformStateAnalytics) };
+  }
+  return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 
 const getAnalyticsConstituencies = async (user) => {
   const params = enforceListScope(user, {});
   const data = await call(() => mlClient.get('/analytics/constituencies', { params }));
+  // ML engine returns { total_constituencies, constituencies: [...] }
+  if (data && Array.isArray(data.constituencies)) {
+    return { ...data, constituencies: data.constituencies.map(transformStateAnalytics) };
+  }
   return Array.isArray(data) ? data.map(transformStateAnalytics) : data;
 };
 

@@ -26,6 +26,8 @@ import AdminExpenditure from './pages/admin/Expenditure';
 import AdminProgressDelays from './pages/admin/ProgressDelays';
 import AdminContractors from './pages/admin/Contractors';
 import AdminReports from './pages/admin/Reports';
+import AdminProfile from './pages/admin/Profile';
+import AdminSettings from './pages/admin/Settings';
 
 // MP pages
 import MPDashboard from './pages/mp/Dashboard';
@@ -87,6 +89,8 @@ export default function App() {
               <Route path="progress" element={<AdminProgressDelays />} />
               <Route path="contractors" element={<AdminContractors />} />
               <Route path="reports" element={<AdminReports />} />
+              <Route path="profile" element={<AdminProfile />} />
+              <Route path="settings" element={<AdminSettings />} />
               <Route path="provision-account" element={<Signup />} />
             </Route>
 

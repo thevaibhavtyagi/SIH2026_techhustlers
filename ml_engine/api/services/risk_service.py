@@ -20,9 +20,19 @@ class RiskService:
             low_memory=False
         )
 
-    def get_summary(self):
+    def _filter_data(self, state: str = None, district: str = None, constituency: str = None):
+        df = self.data.copy()
+        if state:
+            df = df[df["state"].astype(str).str.lower() == state.lower()]
+        if district:
+            df = df[df["ida"].astype(str).str.lower() == district.lower()]
+        if constituency:
+            df = df[df["constituency"].astype(str).str.lower() == constituency.lower()]
+        return df
 
-        df = self.data
+    def get_summary(self, state: str = None, district: str = None, constituency: str = None):
+
+        df = self._filter_data(state, district, constituency)
 
         total_projects = len(df)
 
@@ -65,9 +75,9 @@ class RiskService:
             ),
         }
 
-    def get_distribution(self):
+    def get_distribution(self, state: str = None, district: str = None, constituency: str = None):
 
-        df = self.data
+        df = self._filter_data(state, district, constituency)
 
         distribution = (
             df["final_ai_risk_level"]

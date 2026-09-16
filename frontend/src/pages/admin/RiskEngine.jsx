@@ -37,7 +37,7 @@ export default function RiskEngine() {
     </div>
   );
 
-  const riskDistribution = Object.entries(summary.risk_distribution).map(([label, count]) => ({ label, count }));
+  const riskDistribution = Object.entries(summary.riskDistribution).map(([label, count]) => ({ label, count }));
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -65,7 +65,7 @@ export default function RiskEngine() {
                     <h3 className="font-bold text-slate-800 mb-1">Data Ingestion</h3>
                     <p className="text-sm text-slate-600">MPLADS sanction, expenditure, and completion records.</p>
                     <div className="mt-3 flex gap-4 text-xs font-medium text-slate-500">
-                      <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-green-500" /> {formatNumber(summary.total_projects)} Records</span>
+                      <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-green-500" /> {formatNumber(summary.totalProjects)} Records</span>
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-slate-400" /> Live</span>
                     </div>
                   </div>
@@ -112,7 +112,7 @@ export default function RiskEngine() {
                         <p className="text-sm text-orange-800">Blends all engines into one 0–100 score per project.</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-bold text-red-600">{formatNumber(summary.high_critical_projects)}</p>
+                        <p className="text-xl font-bold text-red-600">{formatNumber(summary.highCriticalProjects)}</p>
                         <p className="text-[10px] uppercase tracking-wider text-red-500 font-bold">High + Critical</p>
                       </div>
                     </div>
@@ -136,15 +136,15 @@ export default function RiskEngine() {
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
                 <span className="text-sm text-slate-600">Total Scanned</span>
-                <span className="text-sm font-semibold text-slate-800">{formatNumber(summary.total_projects)}</span>
+                <span className="text-sm font-semibold text-slate-800">{formatNumber(summary.totalProjects)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
                 <span className="text-sm text-red-800">ML-Detected Anomalies</span>
-                <span className="text-sm font-bold text-red-700">{formatNumber(overview.ml_detected_projects)}</span>
+                <span className="text-sm font-bold text-red-700">{formatNumber(overview.mlDetectedProjects)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
                 <span className="text-sm text-amber-800">Flagged by Multiple Engines</span>
-                <span className="text-sm font-bold text-amber-700">{formatNumber(overview.multi_engine_projects)}</span>
+                <span className="text-sm font-bold text-amber-700">{formatNumber(overview.multiEngineProjects)}</span>
               </div>
             </div>
           </ChartCard>

@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from typing import Optional
 
 from api.services.analytics_service import AnalyticsService
 from api.schemas.risk import AnalyticsOverviewResponse
@@ -17,24 +18,40 @@ analytics_service = AnalyticsService()
     "/overview",
     response_model=AnalyticsOverviewResponse
 )
-def get_overview():
+def get_overview(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
 
-    return analytics_service.get_overview()
+    return analytics_service.get_overview(state, district, constituency)
 
 
 @router.get("/states")
-def get_states():
+def get_states(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
 
-    return analytics_service.get_states()
+    return analytics_service.get_states(state, district, constituency)
 
 
 @router.get("/categories")
-def get_categories():
+def get_categories(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
 
-    return analytics_service.get_categories()
+    return analytics_service.get_categories(state, district, constituency)
 
 
 @router.get("/constituencies")
-def get_constituencies():
+def get_constituencies(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
 
-    return analytics_service.get_constituencies()
+    return analytics_service.get_constituencies(state, district, constituency)

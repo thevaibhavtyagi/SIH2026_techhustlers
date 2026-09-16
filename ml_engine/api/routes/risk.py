@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from typing import Optional
 
 from api.services.risk_service import RiskService
 from api.schemas.risk import (
@@ -20,15 +21,23 @@ risk_service = RiskService()
     "/summary",
     response_model=RiskSummaryResponse
 )
-def get_risk_summary():
+def get_risk_summary(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
 
-    return risk_service.get_summary()
+    return risk_service.get_summary(state, district, constituency)
 
 
 @router.get(
     "/distribution",
     response_model=RiskDistributionResponse
 )
-def get_risk_distribution():
+def get_risk_distribution(
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    constituency: Optional[str] = None
+):
 
-    return risk_service.get_distribution()
+    return risk_service.get_distribution(state, district, constituency)

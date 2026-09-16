@@ -33,23 +33,23 @@ export default function ProgressDelays() {
   }, [filterValues]);
 
   const filtered = search
-    ? projects.filter((p) => p.work_id.toLowerCase().includes(search.toLowerCase()) || p.work_description?.toLowerCase().includes(search.toLowerCase()))
+    ? projects.filter((p) => p.id.toLowerCase().includes(search.toLowerCase()) || p.name?.toLowerCase().includes(search.toLowerCase()))
     : projects;
 
   const columns = [
-    { key: 'work_id', label: 'Work ID', sortable: true, render: (v) => <span className="font-mono text-xs">{v}</span> },
-    { key: 'work_description', label: 'Project', width: '26%', render: (v, row) => (
+    { key: 'id', label: 'Work ID', sortable: true, render: (v) => <span className="font-mono text-xs">{v}</span> },
+    { key: 'name', label: 'Project', width: '26%', render: (v, row) => (
       <div>
         <p className="text-sm text-slate-800 truncate max-w-xs" title={v}>{v || '—'}</p>
         <p className="text-xs text-slate-500">{row.constituency}, {row.state}</p>
       </div>
     ) },
-    { key: 'work_status', label: 'Status', sortable: true },
-    { key: 'sanction_delay_days', label: 'Sanction Delay', sortable: true, render: (v) => v == null ? '—' : (
+    { key: 'status', label: 'Status', sortable: true },
+    { key: 'sanctionDelayDays', label: 'Sanction Delay', sortable: true, render: (v) => v == null ? '—' : (
       <span className={v > 30 ? 'text-amber-600 font-semibold' : 'text-slate-700'}>{Math.round(v)}d</span>
     ) },
-    { key: 'completion_duration_days', label: 'Completion Duration', sortable: true, render: (v) => v == null ? '—' : `${Math.round(v)}d` },
-    { key: 'ensemble_risk_level', label: 'ML Risk', sortable: true },
+    { key: 'completionDurationDays', label: 'Completion Duration', sortable: true, render: (v) => v == null ? '—' : `${Math.round(v)}d` },
+    { key: 'ensembleRiskLevel', label: 'ML Risk', sortable: true },
   ];
 
   return (
